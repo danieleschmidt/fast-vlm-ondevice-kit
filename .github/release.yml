@@ -1,0 +1,58 @@
+# GitHub Release Configuration
+# https://docs.github.com/en/repositories/releasing-projects-on-github/automatically-generated-release-notes
+
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+      - duplicate
+      - question
+      - invalid
+      - wontfix
+      - dependencies
+  categories:
+    - title: 🚀 New Features
+      labels:
+        - feature
+        - enhancement
+        - new-feature
+    - title: 🐛 Bug Fixes
+      labels:
+        - bug
+        - bugfix
+        - fix
+    - title: 📚 Documentation
+      labels:
+        - documentation
+        - docs
+    - title: 🔧 Maintenance
+      labels:
+        - maintenance
+        - refactor
+        - cleanup
+    - title: ⚡ Performance
+      labels:
+        - performance
+        - optimization
+    - title: 🔒 Security
+      labels:
+        - security
+        - vulnerability
+    - title: 📱 Mobile/iOS
+      labels:
+        - ios
+        - swift
+        - mobile
+    - title: 🐍 Python/ML
+      labels:
+        - python
+        - ml
+        - pytorch
+    - title: 🐳 DevOps/Infrastructure
+      labels:
+        - devops
+        - docker
+        - ci-cd
+    - title: Other Changes
+      labels:
+        - "*"
