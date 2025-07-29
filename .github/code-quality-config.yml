@@ -1,0 +1,92 @@
+# Code Quality Configuration for Fast VLM On-Device Kit
+# Comprehensive quality gates for MATURING SDLC
+
+quality_gates:
+  # Code coverage requirements
+  coverage:
+    minimum_threshold: 85
+    line_coverage: 80
+    branch_coverage: 75
+    function_coverage: 90
+    
+  # Complexity metrics
+  complexity:
+    cyclomatic_complexity: 10
+    cognitive_complexity: 15
+    nesting_depth: 4
+    
+  # Code duplication
+  duplication:
+    max_duplicate_lines: 50
+    max_duplicate_blocks: 3
+    
+  # Security metrics
+  security:
+    max_high_severity_issues: 0
+    max_medium_severity_issues: 2
+    
+  # Performance metrics  
+  performance:
+    max_build_time_minutes: 15
+    max_test_time_minutes: 10
+
+# Language-specific configurations
+languages:
+  python:
+    linting:
+      - flake8
+      - black
+      - isort
+      - mypy
+      - bandit
+    metrics:
+      - pylint
+      - radon
+      - xenon
+    testing:
+      - pytest
+      - coverage
+      
+  swift:
+    linting:
+      - swiftlint
+      - swiftformat
+    metrics:
+      - swift-metrics
+    testing:
+      - swift-test
+
+# Tool configurations
+tools:
+  sonarqube:
+    enabled: true
+    project_key: "fast-vlm-ondevice"
+    quality_gate: "MATURING_PROJECT"
+    
+  codeclimate:
+    enabled: true
+    maintainability_threshold: 'A'
+    test_coverage_threshold: 85
+    
+  deepsource:
+    enabled: true
+    analyzers:
+      - python
+      - swift
+      - docker
+      - secrets
+
+# Notification settings
+notifications:
+  quality_gate_failure:
+    channels: ['#code-quality']
+    severity: 'high'
+  coverage_drop:
+    channels: ['#dev-alerts']
+    threshold: 5  # percentage points
+    
+# Enforcement rules
+enforcement:
+  block_merge_on_failure: true
+  require_quality_review: true
+  auto_assign_reviewers: true

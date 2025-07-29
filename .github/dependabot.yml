@@ -1,0 +1,85 @@
+# Dependabot configuration for automated dependency updates
+# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # Python dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "02:00"
+    commit-message:
+      prefix: "deps(python):"
+      include: "scope"
+    reviewers:
+      - "@fast-vlm-maintainers"
+    assignees:
+      - "@fast-vlm-maintainers"
+    open-pull-requests-limit: 5
+    target-branch: "main"
+    labels:
+      - "dependencies"
+      - "python"
+      - "automated"
+
+  # Swift dependencies
+  - package-ecosystem: "swift"
+    directory: "/ios"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "02:00"
+    commit-message:
+      prefix: "deps(swift):"
+      include: "scope"
+    reviewers:
+      - "@fast-vlm-maintainers"
+    assignees:
+      - "@fast-vlm-maintainers"
+    open-pull-requests-limit: 3
+    target-branch: "main"
+    labels:
+      - "dependencies"
+      - "swift"
+      - "ios"
+      - "automated"
+
+  # Docker dependencies
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "02:00"
+    commit-message:
+      prefix: "deps(docker):"
+      include: "scope"
+    reviewers:
+      - "@fast-vlm-maintainers"
+    open-pull-requests-limit: 2
+    target-branch: "main"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "automated"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "thursday"
+      time: "02:00"
+    commit-message:
+      prefix: "deps(actions):"
+      include: "scope"
+    reviewers:
+      - "@fast-vlm-maintainers"
+    open-pull-requests-limit: 2
+    target-branch: "main"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "automated"
