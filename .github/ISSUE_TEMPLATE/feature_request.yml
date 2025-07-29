@@ -1,0 +1,102 @@
+name: Feature Request
+description: Suggest an idea for Fast VLM On-Device Kit
+title: "[Feature] "
+labels: ["enhancement", "triage"]
+assignees: ["danieleschmidt"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new feature! Please provide as much detail as possible.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      description: What category does this feature request fall into?
+      options:
+        - Model Conversion
+        - iOS/Swift Integration
+        - Performance Optimization
+        - New Model Architecture
+        - Documentation
+        - Developer Experience
+        - CI/CD
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: Is your feature request related to a problem? Please describe.
+      placeholder: I'm always frustrated when...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like to see implemented.
+      placeholder: I would like to see...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Describe any alternative solutions or features you've considered.
+
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Implementation Details
+      description: |
+        If you have ideas about how this could be implemented, please share them.
+        Include any technical considerations, API designs, or architectural changes.
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature to you?
+      options:
+        - Low - Nice to have
+        - Medium - Would be helpful
+        - High - Important for my use case
+        - Critical - Blocking my adoption
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use Case
+      description: |
+        Describe the specific use case or scenario where this feature would be beneficial.
+        This helps us understand the context and prioritize accordingly.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      description: Would you be interested in contributing to this feature?
+      options:
+        - label: I would be willing to contribute code for this feature
+        - label: I would be willing to test this feature
+        - label: I would be willing to help with documentation
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/danieleschmidt/fast-vlm-ondevice-kit/blob/main/CODE_OF_CONDUCT.md)
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true

@@ -1,0 +1,27 @@
+# Global owners for all files
+* @danieleschmidt
+
+# Python core components
+/src/ @danieleschmidt
+/tests/ @danieleschmidt
+pyproject.toml @danieleschmidt
+requirements*.txt @danieleschmidt
+
+# iOS/Swift components  
+/ios/ @danieleschmidt
+
+# Documentation
+/docs/ @danieleschmidt
+README.md @danieleschmidt
+
+# CI/CD and workflows
+/.github/ @danieleschmidt
+Makefile @danieleschmidt
+.pre-commit-config.yaml @danieleschmidt
+
+# Security and compliance
+SECURITY.md @danieleschmidt
+.bandit @danieleschmidt
+
+# Release and packaging
+CHANGELOG.md @danieleschmidt

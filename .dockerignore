@@ -1,0 +1,60 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env
+venv
+.env
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache
+htmlcov
+.coverage
+.tox
+.mypy_cache
+.ruff_cache
+
+# Build artifacts  
+build
+dist
+*.egg-info
+.eggs
+
+# Documentation
+docs/_build
+site
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Test reports
+reports/
+security-reports/
+
+# Model files (too large for container)
+*.pth
+*.mlpackage
+checkpoints/
+models/
+
+# Development only
+docker-compose.override.yml
+.pre-commit-config.yaml

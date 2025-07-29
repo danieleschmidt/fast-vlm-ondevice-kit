@@ -205,3 +205,31 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# FastVLM specific
+checkpoints/
+models/
+*.mlpackage/
+*.mlmodel
+*.pth
+*.onnx
+
+# Reports and benchmarks
+reports/
+benchmark-results/
+profiling-results/
+*.prof
+
+# Docker
+docker-compose.override.yml
+.env.local
+.env.production
+
+# Performance and monitoring
+logs/
+*.log.*
+
+# Generated requirements (use .in files as source)
+# Uncomment if using pip-compile workflow
+# requirements.txt
+# requirements-dev.txt

@@ -1,0 +1,98 @@
+version: '3.8'
+
+services:
+  # Development environment
+  dev:
+    build:
+      context: .
+      target: development
+    volumes:
+      - .:/workspace
+      - pip-cache:/root/.cache/pip
+      - pre-commit-cache:/root/.cache/pre-commit
+    working_dir: /workspace
+    environment:
+      - PYTHONPATH=/workspace/src
+    command: bash
+
+  # Testing environment
+  test:
+    build:
+      context: .
+      target: testing
+    volumes:
+      - .:/workspace
+      - test-reports:/workspace/reports
+    environment:
+      - PYTHONPATH=/workspace/src
+      - COV_REPORT_DIR=/workspace/reports
+    command: make test
+
+  # Linting and code quality
+  lint:
+    build:
+      context: .
+      target: development
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    command: make lint
+
+  # Security scanning
+  security:
+    build:
+      context: .
+      target: development
+    volumes:
+      - .:/workspace
+      - security-reports:/workspace/security-reports
+    working_dir: /workspace
+    command: >
+      sh -c "
+        bandit -r src/ -f json -o security-reports/bandit.json &&
+        safety check --json --output security-reports/safety.json
+      "
+
+  # Documentation building
+  docs:
+    build:
+      context: .
+      target: development
+    volumes:
+      - .:/workspace
+      - docs-build:/workspace/docs/_build
+    working_dir: /workspace
+    ports:
+      - "8080:8080"
+    command: >
+      sh -c "
+        cd docs &&
+        sphinx-build -b html . _build/html &&
+        cd _build/html &&
+        python -m http.server 8080
+      "
+
+  # Model conversion pipeline
+  converter:
+    build:
+      context: .
+      target: production
+    volumes:
+      - ./checkpoints:/workspace/checkpoints
+      - ./models:/workspace/models
+    environment:
+      - CHECKPOINT_DIR=/workspace/checkpoints
+      - OUTPUT_DIR=/workspace/models
+    command: python scripts/download_checkpoints.py --model fast-vlm-base
+
+volumes:
+  pip-cache:
+    driver: local
+  pre-commit-cache:
+    driver: local
+  test-reports:
+    driver: local
+  security-reports:
+    driver: local
+  docs-build:
+    driver: local

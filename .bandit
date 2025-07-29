@@ -1,0 +1,13 @@
+[bandit]
+# Bandit security linter configuration
+
+exclude_dirs = ["tests", "build", "dist", ".venv", ".tox"]
+skips = ["B101"]  # Skip assert_used test (pytest uses assertions)
+
+# Test IDs to skip:
+# B101: Use of assert detected (pytest uses assert)
+# B601: paramiko_calls - if using paramiko
+# B603: subprocess_without_shell_equals_true - if subprocess needed
+
+[bandit.any_other_rules]
+# Custom rule configurations can go here

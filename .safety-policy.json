@@ -1,0 +1,19 @@
+{
+  "security": {
+    "ignore-vulnerabilities": [],
+    "ignore-unpinned-requirements": false,
+    "continue-on-vulnerability-error": false
+  },
+  "alert": {
+    "ignore-severities": [],
+    "ignore-cvss-severity-below": 0,
+    "ignore-cvss-unknown-severity": false
+  },
+  "report": {
+    "only-report": false,
+    "output": {
+      "format": "json",
+      "file": "reports/safety.json"
+    }
+  }
+}

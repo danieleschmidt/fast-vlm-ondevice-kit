@@ -1,0 +1,119 @@
+name: Bug Report
+description: File a bug report to help us improve Fast VLM On-Device Kit
+title: "[Bug] "
+labels: ["bug", "triage"]
+assignees: ["danieleschmidt"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report! Please provide as much detail as possible.
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: What version of Fast VLM On-Device Kit are you using?
+      placeholder: "1.0.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      description: What platform are you running on?
+      options:
+        - iOS
+        - macOS
+        - Python (macOS)
+        - Python (Linux)
+        - Docker
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: Tell us what happened!
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Load model with '...'
+        2. Process image with '...'
+        3. Call inference with '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: A clear and concise description of what you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs
+      description: If applicable, add error logs to help explain your problem.
+      render: shell
+
+  - type: textarea
+    id: device-info
+    attributes:
+      label: Device Information
+      description: |
+        For iOS/macOS issues, please provide:
+        - Device model (e.g., iPhone 15 Pro, MacBook Pro M2)
+        - iOS/macOS version
+        - Available memory
+        - Xcode version (if building from source)
+      placeholder: |
+        Device: iPhone 15 Pro
+        iOS Version: 17.1
+        Memory: 8GB
+        Xcode: 15.0
+
+  - type: textarea
+    id: python-env
+    attributes:
+      label: Python Environment (if applicable)
+      description: |
+        For Python-related issues:
+        - Python version
+        - PyTorch version
+        - Core ML Tools version
+        - Virtual environment info
+      placeholder: |
+        Python: 3.11.5
+        PyTorch: 2.3.1
+        Core ML Tools: 7.1
+        Environment: venv
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here.
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/danieleschmidt/fast-vlm-ondevice-kit/blob/main/CODE_OF_CONDUCT.md)
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true
