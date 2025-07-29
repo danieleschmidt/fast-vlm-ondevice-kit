@@ -1,0 +1,64 @@
+# Multi-stage Dockerfile for FastVLM model conversion
+FROM python:3.10-slim as base
+
+# Set working directory
+WORKDIR /workspace
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    wget \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user for security
+RUN useradd --create-home --shell /bin/bash converter
+USER converter
+
+# Install Python dependencies
+COPY requirements.txt requirements-dev.txt ./
+RUN pip install --user --no-cache-dir -r requirements.txt
+
+# Copy source code
+COPY --chown=converter:converter . .
+
+# Install package in development mode
+RUN pip install --user -e .
+
+# Expose common ports
+EXPOSE 8000
+
+# Default command
+CMD ["python", "-m", "fast_vlm_ondevice.converter", "--help"]
+
+# Development stage with additional tools
+FROM base as development
+
+USER root
+RUN apt-get update && apt-get install -y \
+    vim \
+    htop \
+    tree \
+    && rm -rf /var/lib/apt/lists/*
+
+USER converter
+RUN pip install --user -r requirements-dev.txt
+
+# Production stage optimized for size
+FROM python:3.10-slim as production
+
+WORKDIR /workspace
+RUN useradd --create-home --shell /bin/bash converter
+
+# Only install production dependencies
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy only necessary files
+COPY --from=base --chown=converter:converter /workspace/src ./src
+COPY --from=base --chown=converter:converter /workspace/pyproject.toml ./
+
+USER converter
+RUN pip install --user .
+
+ENTRYPOINT ["python", "-m", "fast_vlm_ondevice.converter"]
