@@ -1,0 +1,21 @@
+# Core ML and PyTorch
+torch>=2.3.0
+torchvision>=0.18.0
+coremltools>=7.1
+transformers>=4.40.0
+
+# Image processing
+pillow>=10.0.0
+opencv-python>=4.8.0
+
+# Scientific computing
+numpy>=1.24.0
+scipy>=1.11.0
+
+# Utilities
+tqdm>=4.65.0
+pyyaml>=6.0
+requests>=2.31.0
+
+# Optional dependencies for development
+# Install with: pip install -r requirements-dev.txt
