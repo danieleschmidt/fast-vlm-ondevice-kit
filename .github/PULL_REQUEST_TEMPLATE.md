@@ -13,135 +13,100 @@ Brief description of the changes in this PR.
 - [ ] Performance improvement
 - [ ] Code refactoring
 - [ ] Test improvements
+- [ ] CI/CD improvements
+
+## Testing
+
+- [ ] I have added tests that prove my fix is effective or that my feature works
+- [ ] I have updated existing tests as needed
+- [ ] All new and existing tests pass locally
+- [ ] I have tested on iOS/macOS (if applicable)
+- [ ] I have run performance benchmarks (if applicable)
 
 ## Changes Made
 
-### Python Changes
-- [ ] Model conversion improvements
-- [ ] Quantization enhancements
-- [ ] Performance optimizations
-- [ ] Bug fixes
-- [ ] New utilities
+### Core Changes
+- 
+- 
 
-### Swift Changes
-- [ ] iOS API improvements
-- [ ] Performance optimizations
-- [ ] Bug fixes
-- [ ] New features
+### Testing Changes
+- 
+- 
 
-### Documentation
-- [ ] README updates
-- [ ] API documentation
-- [ ] Code examples
-- [ ] Architecture documentation
-
-### Testing
-- [ ] Unit tests added/updated
-- [ ] Integration tests added/updated  
-- [ ] Performance tests added/updated
-- [ ] Manual testing completed
-
-## Testing Checklist
-
-### Python Testing
-- [ ] All existing tests pass (`make test`)
-- [ ] New tests added for new functionality
-- [ ] Code coverage maintained (>85%)
-- [ ] Linting passes (`make lint`)
-
-### Swift Testing
-- [ ] All Swift tests pass (`swift test`)
-- [ ] iOS simulator testing completed
-- [ ] Memory usage validated
-- [ ] Performance benchmarks run
-
-### Integration Testing
-- [ ] End-to-end conversion pipeline tested
-- [ ] Model accuracy validated
-- [ ] Cross-platform compatibility verified
+### Documentation Changes
+- 
+- 
 
 ## Performance Impact
 
-### Model Conversion
-- [ ] Conversion time: ⬆️ Faster / ➡️ No change / ⬇️ Slower
-- [ ] Memory usage: ⬆️ Lower / ➡️ No change / ⬇️ Higher
-- [ ] Model size: ⬆️ Smaller / ➡️ No change / ⬇️ Larger
+<!-- If applicable, describe the performance impact of your changes -->
 
-### Inference Performance
-- [ ] Latency: ⬆️ Faster / ➡️ No change / ⬇️ Slower
-- [ ] Memory usage: ⬆️ Lower / ➡️ No change / ⬇️ Higher
-- [ ] Energy usage: ⬆️ Lower / ➡️ No change / ⬇️ Higher
+- [ ] No performance impact
+- [ ] Performance improvement (describe below)
+- [ ] Performance regression (describe below and justify)
 
-**Performance Details:**
-<!-- Provide specific numbers if available -->
+Performance details:
 
 ## Breaking Changes
 
-- [ ] This PR contains breaking changes
+<!-- If this is a breaking change, describe what breaks and how to migrate -->
 
-**Breaking Change Details:**
-<!-- Describe any breaking changes and migration path -->
+- [ ] No breaking changes
+- [ ] Breaking changes (describe below)
 
-## Documentation
+Migration guide:
 
-- [ ] Code is self-documenting with clear function/class names
-- [ ] Public APIs have docstrings
-- [ ] README updated if needed
-- [ ] API documentation updated if needed
-- [ ] Examples updated if needed
+## Checklist
 
-## Related Issues
+### Code Quality
+- [ ] My code follows the project's style guidelines
+- [ ] I have performed a self-review of my own code
+- [ ] I have commented my code, particularly in hard-to-understand areas
+- [ ] My changes generate no new warnings
 
-Fixes #(issue_number)
-Relates to #(issue_number)
+### Testing
+- [ ] I have added unit tests for new functionality
+- [ ] I have added integration tests where appropriate
+- [ ] I have updated performance benchmarks if needed
+- [ ] All tests pass locally with `make test`
 
-## Screenshots/Examples
+### Documentation
+- [ ] I have updated the README if needed
+- [ ] I have updated the CHANGELOG.md
+- [ ] I have added/updated docstrings for new functions
+- [ ] I have updated the documentation in the `docs/` folder if needed
 
-<!-- If applicable, add screenshots or code examples -->
+### Security
+- [ ] I have run security scans (`make security`)
+- [ ] My changes don't introduce security vulnerabilities
+- [ ] I have not committed secrets or sensitive information
+
+### iOS/Swift (if applicable)
+- [ ] Swift code compiles without warnings
+- [ ] I have tested on actual iOS devices
+- [ ] I have updated Swift package dependencies if needed
+- [ ] I have followed iOS/Swift best practices
+
+## Screenshots (if applicable)
+
+<!-- Add screenshots to help explain your changes -->
 
 ## Additional Notes
 
 <!-- Any additional information that reviewers should know -->
 
-## Reviewer Checklist
+## Related Issues
 
-### Code Quality
-- [ ] Code follows project style guidelines
-- [ ] Error handling is appropriate
-- [ ] Security considerations addressed
-- [ ] No hardcoded values or secrets
+<!-- Link to related issues -->
 
-### Architecture
-- [ ] Changes align with project architecture
-- [ ] No unnecessary complexity introduced
-- [ ] Proper separation of concerns
-- [ ] Reusable components where appropriate
-
-### Testing
-- [ ] Adequate test coverage
-- [ ] Tests are meaningful and maintainable
-- [ ] Edge cases considered
-- [ ] Performance tests included if applicable
-
-### Documentation
-- [ ] Public APIs documented
-- [ ] Complex logic explained
-- [ ] Examples provided where helpful
-- [ ] Changelog updated if needed
+Closes #
+Fixes #
+Related to #
 
 ---
 
-**For Maintainers:**
+By submitting this pull request, I confirm that:
 
-### Pre-merge Checklist
-- [ ] All CI checks passing
-- [ ] Required reviews completed
-- [ ] Performance impact acceptable
-- [ ] Documentation complete
-- [ ] Breaking changes properly communicated
-
-### Post-merge Actions
-- [ ] Update project roadmap if applicable  
-- [ ] Notify community of significant changes
-- [ ] Update deployment documentation if needed
-- [ ] Monitor for issues after deployment
+- [ ] I have read and agree to the project's [Code of Conduct](CODE_OF_CONDUCT.md)
+- [ ] I have read the [Contributing Guidelines](CONTRIBUTING.md)
+- [ ] My contribution is made under the same license as this project (MIT)
