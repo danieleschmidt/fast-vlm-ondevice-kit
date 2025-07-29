@@ -1,7 +1,7 @@
 # Core ML and PyTorch - pinned to specific compatible versions
 torch>=2.3.0,<2.5.0
 torchvision>=0.18.0,<0.20.0
-coremltools>=7.1,<8.0
+coremltools>=7.1,<9.0
 
 # Transformers and ML utilities
 transformers>=4.40.0,<5.0.0
