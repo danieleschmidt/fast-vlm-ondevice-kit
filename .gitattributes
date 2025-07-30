@@ -1,0 +1,53 @@
+# Set default line ending behavior
+* text=auto eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.mov binary
+*.mp4 binary
+*.mp3 binary
+*.flv binary
+*.fla binary
+*.swf binary
+*.gz binary
+*.zip binary
+*.7z binary
+*.ttf binary
+*.eot binary
+*.woff binary
+*.woff2 binary
+*.pyc binary
+*.pdf binary
+*.pth binary
+*.mlpackage binary
+*.mlmodel binary
+
+# Text files that should have consistent line endings
+*.py text eol=lf
+*.swift text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+*.cfg text eol=lf
+*.ini text eol=lf
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Documentation
+*.md linguist-documentation
+docs/** linguist-documentation
+
+# Generated files
+src/fast_vlm_ondevice/__pycache__/** linguist-generated
+tests/__pycache__/** linguist-generated
+*.egg-info/** linguist-generated
+
+# Vendored dependencies
+ios/Package.resolved linguist-vendored
