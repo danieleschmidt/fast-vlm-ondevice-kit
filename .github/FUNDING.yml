@@ -1,0 +1,20 @@
+# Funding configuration for FastVLM On-Device Kit
+# Enable community support for this open-source ML project
+
+# GitHub Sponsors (replace with actual username)
+github: [danieleschmidt]
+
+# Open Collective (for project-specific funding)
+# open_collective: fast-vlm-ondevice
+
+# Patreon (for ongoing development support)
+# patreon: fastvlm
+
+# Custom funding URLs
+custom: [
+  "https://buymeacoffee.com/fastvlm",
+  "https://ko-fi.com/fastvlmondevice"
+]
+
+# Note: Uncomment and update the above URLs with actual funding platforms
+# once the project establishes community funding channels

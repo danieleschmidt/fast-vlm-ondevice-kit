@@ -1,0 +1,171 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Renovate configuration for FastVLM On-Device Kit - automated dependency updates",
+  
+  "extends": [
+    "config:base",
+    "docker:enableMajor",
+    "helpers:pinGitHubActionsByDigest"
+  ],
+  
+  "timezone": "UTC",
+  "schedule": ["before 6am on Monday"],
+  
+  "labels": ["dependencies", "automated"],
+  "reviewers": ["danieleschmidt"],
+  "assignees": ["danieleschmidt"],
+  
+  "prHourlyLimit": 2,
+  "prConcurrentLimit": 5,
+  "branchConcurrentLimit": 3,
+  
+  "packageRules": [
+    {
+      "description": "Python ML/AI packages - more frequent updates",
+      "matchPackagePatterns": [
+        "torch",
+        "torchvision", 
+        "transformers",
+        "coremltools",
+        "numpy",
+        "pillow"
+      ],
+      "schedule": ["before 6am on Monday and Thursday"],
+      "reviewers": ["danieleschmidt"],
+      "labels": ["dependencies", "ml-packages", "priority-high"]
+    },
+    {
+      "description": "Development and testing packages",
+      "matchPackagePatterns": [
+        "pytest",
+        "black",
+        "isort",
+        "mypy",
+        "ruff",
+        "pre-commit",
+        "bandit",
+        "safety"
+      ],
+      "groupName": "dev dependencies",
+      "labels": ["dependencies", "dev-tools"],
+      "reviewers": ["danieleschmidt"]
+    },
+    {
+      "description": "GitHub Actions - pin by digest for security",
+      "matchManagers": ["github-actions"],
+      "pinDigests": true,
+      "labels": ["dependencies", "github-actions", "security"]
+    },
+    {
+      "description": "Docker base images - security-focused updates",
+      "matchDatasources": ["docker"],
+      "labels": ["dependencies", "docker", "security"],
+      "reviewers": ["danieleschmidt"]
+    },
+    {
+      "description": "Swift Package Manager dependencies",
+      "matchManagers": ["swift"],
+      "labels": ["dependencies", "swift", "ios"],
+      "reviewers": ["danieleschmidt"]
+    },
+    {
+      "description": "Major version updates - require manual review",
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true,
+      "labels": ["dependencies", "major-update", "needs-review"],
+      "reviewers": ["danieleschmidt"],
+      "assignees": ["danieleschmidt"]
+    },
+    {
+      "description": "Security updates - prioritize and auto-merge",
+      "matchPackagePatterns": ["*"],
+      "matchUpdateTypes": ["patch"],
+      "matchCurrentVersion": "!/^0\\./",
+      "automerge": true,
+      "automergeType": "pr",
+      "labels": ["dependencies", "security", "auto-merge"]
+    }
+  ],
+  
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security", "vulnerability", "priority-critical"],
+    "reviewers": ["danieleschmidt"],
+    "assignees": ["danieleschmidt"],
+    "schedule": ["at any time"],
+    "prCreation": "immediate"
+  },
+  
+  "osvVulnerabilityAlerts": true,
+  
+  "dependencyDashboard": true,
+  "dependencyDashboardTitle": "📊 Dependency Dashboard - FastVLM On-Device Kit",
+  "dependencyDashboardHeader": "This dashboard provides an overview of all dependency updates for the FastVLM On-Device Kit repository. ML/AI packages are prioritized for faster updates to ensure compatibility with the latest models and frameworks.",
+  
+  "gitAuthor": "renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>",
+  
+  "platformAutomerge": true,
+  "automergeStrategy": "squash",
+  
+  "semanticCommits": "enabled",
+  "semanticCommitType": "chore",
+  "semanticCommitScope": "deps",
+  
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on the first day of the month"],
+    "labels": ["dependencies", "lockfile-maintenance"]
+  },
+  
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update Python versions in README and documentation",
+      "fileMatch": ["README\\.md$", "docs/.*\\.md$"],
+      "matchStrings": [
+        "python>=(?<currentValue>\\d+\\.\\d+)",
+        "Python (?<currentValue>\\d+\\.\\d+)\\+"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "python/cpython",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "customType": "regex", 
+      "description": "Update iOS/Swift versions in documentation",
+      "fileMatch": ["README\\.md$", "docs/.*\\.md$", "ios/Package\\.swift$"],
+      "matchStrings": [
+        "iOS (?<currentValue>\\d+\\.\\d+)\\+",
+        "Swift (?<currentValue>\\d+\\.\\d+)\\+"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "apple/swift"
+    }
+  ],
+  
+  "regexManagers": [
+    {
+      "description": "Update Docker base image versions in Dockerfiles",
+      "fileMatch": ["Dockerfile$", "Dockerfile\\..+$"],
+      "matchStrings": [
+        "FROM (?<depName>.*?):(?<currentValue>.*?)@sha256:[a-f0-9]+\\s*(?:#.*)?$"
+      ],
+      "datasourceTemplate": "docker"
+    }
+  ],
+  
+  "ignoreDeps": [
+    // Ignore dependencies that require manual coordination
+    "node", // Managed by .nvmrc or specific tooling
+    "npm"   // Managed by package-lock.json
+  ],
+  
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/bower_components/**",
+    "**/__pycache__/**",
+    "**/site-packages/**",
+    "**/checkpoints/**",
+    "**/models/**"
+  ]
+}

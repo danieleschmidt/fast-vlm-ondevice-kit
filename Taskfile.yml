@@ -1,0 +1,289 @@
+# Taskfile for FastVLM On-Device Kit
+# Alternative to Makefile using go-task
+# Install with: go install github.com/go-task/task/v3/cmd/task@latest
+
+version: '3'
+
+vars:
+  PYTHON: python
+  PIP: pip
+  PYTEST: pytest
+  PROJECT_NAME: fast-vlm-ondevice
+  SRC_DIR: src/fast_vlm_ondevice
+  TEST_DIR: tests
+  DOCS_DIR: docs
+
+env:
+  PYTHONPATH: "{{.ROOT_DIR}}/src"
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+
+  setup:
+    desc: Set up development environment
+    cmds:
+      - echo "🚀 Setting up {{.PROJECT_NAME}} development environment..."
+      - "{{.PYTHON}} -m pip install --upgrade pip setuptools wheel"
+      - "{{.PIP}} install -e .[dev]"
+      - pre-commit install
+      - echo "✅ Development environment ready!"
+
+  # Code Quality Tasks
+  format:
+    desc: Format code with black and isort
+    cmds:
+      - echo "🎨 Formatting code..."
+      - black {{.SRC_DIR}} {{.TEST_DIR}}
+      - isort {{.SRC_DIR}} {{.TEST_DIR}}
+      - ruff format {{.SRC_DIR}} {{.TEST_DIR}}
+
+  lint:
+    desc: Run linting checks
+    cmds:
+      - echo "🔍 Running linting checks..."
+      - ruff check {{.SRC_DIR}} {{.TEST_DIR}}
+      - black --check {{.SRC_DIR}} {{.TEST_DIR}}
+      - isort --check-only {{.SRC_DIR}} {{.TEST_DIR}}
+
+  typecheck:
+    desc: Run type checking with mypy
+    cmds:
+      - echo "🔎 Running type checks..."
+      - mypy {{.SRC_DIR}}
+
+  security:
+    desc: Run security scans
+    cmds:
+      - echo "🔒 Running security scans..."
+      - bandit -r {{.SRC_DIR}}
+      - safety check --json
+
+  quality:
+    desc: Run all quality checks
+    deps: [lint, typecheck, security]
+    cmds:
+      - echo "✅ All quality checks completed!"
+
+  # Testing Tasks
+  test:
+    desc: Run tests with coverage
+    cmds:
+      - echo "🧪 Running tests with coverage..."
+      - "{{.PYTEST}} --cov={{.SRC_DIR}} --cov-report=html --cov-report=term-missing {{.TEST_DIR}}"
+
+  test:fast:
+    desc: Run tests with fail-fast and last-failed-first
+    cmds:
+      - echo "⚡ Running fast tests..."
+      - "{{.PYTEST}} -x --ff {{.TEST_DIR}}"
+
+  test:performance:
+    desc: Run performance benchmarks
+    cmds:
+      - echo "📊 Running performance tests..."
+      - "{{.PYTHON}} benchmarks/performance_automation.py --quick"
+
+  test:integration:
+    desc: Run integration tests
+    cmds:
+      - echo "🔗 Running integration tests..."
+      - "{{.PYTEST}} {{.TEST_DIR}}/integration/ -v"
+
+  # Model Operations
+  download:
+    desc: Download model checkpoints
+    vars:
+      MODEL: '{{.MODEL | default "fast-vlm-base"}}'
+    cmds:
+      - echo "📥 Downloading {{.MODEL}} checkpoints..."
+      - "{{.PYTHON}} scripts/download_checkpoints.py --model {{.MODEL}}"
+
+  convert:
+    desc: Convert PyTorch model to Core ML
+    vars:
+      MODEL: '{{.MODEL | default "fast-vlm-base"}}'
+      OUTPUT: '{{.OUTPUT | default "FastVLM.mlpackage"}}'
+    cmds:
+      - echo "🔄 Converting {{.MODEL}} to Core ML..."
+      - |
+        {{.PYTHON}} -c "
+        from {{.SRC_DIR}}.converter import FastVLMConverter
+        converter = FastVLMConverter()
+        model = converter.load_pytorch_model('checkpoints/{{.MODEL}}.pth')
+        coreml_model = converter.convert_to_coreml(model, quantization='int4')
+        coreml_model.save('{{.OUTPUT}}')
+        print('✅ Model converted to {{.OUTPUT}}')
+        "
+
+  # Development Server Tasks
+  serve:
+    desc: Start development HTTP server
+    vars:
+      PORT: '{{.PORT | default "8000"}}'
+    cmds:
+      - echo "🌐 Starting development server on port {{.PORT}}..."
+      - "{{.PYTHON}} -m http.server {{.PORT}}"
+
+  jupyter:
+    desc: Start Jupyter Lab server
+    cmds:
+      - echo "📓 Starting Jupyter Lab..."
+      - jupyter lab --ip=0.0.0.0 --port=8888 --no-browser
+
+  # Documentation Tasks
+  docs:
+    desc: Build documentation
+    cmds:
+      - echo "📚 Building documentation..."
+      - cd {{.DOCS_DIR}} && make html
+      - echo "✅ Documentation built in {{.DOCS_DIR}}/_build/html/"
+
+  docs:serve:
+    desc: Serve documentation locally
+    cmds:
+      - echo "📖 Serving documentation on http://localhost:8080"
+      - cd {{.DOCS_DIR}}/_build/html && {{.PYTHON}} -m http.server 8080
+
+  docs:clean:
+    desc: Clean documentation build artifacts
+    cmds:
+      - cd {{.DOCS_DIR}} && make clean
+
+  # Docker Tasks
+  docker:build:
+    desc: Build Docker image
+    cmds:
+      - echo "🐳 Building Docker image..."
+      - docker build -t {{.PROJECT_NAME}} .
+
+  docker:run:
+    desc: Run Docker container
+    cmds:
+      - echo "🚀 Running Docker container..."
+      - docker run -it --rm -v {{.PWD}}:/workspace {{.PROJECT_NAME}}
+
+  docker:up:
+    desc: Start Docker Compose services
+    cmds:
+      - echo "🐳 Starting Docker Compose services..."
+      - docker-compose up -d
+
+  docker:down:
+    desc: Stop Docker Compose services
+    cmds:
+      - echo "🛑 Stopping Docker Compose services..."
+      - docker-compose down
+
+  # Benchmarking Tasks
+  benchmark:
+    desc: Run performance benchmarks
+    vars:
+      MODELS: '{{.MODELS | default "fast-vlm-base"}}'
+      ITERATIONS: '{{.ITERATIONS | default "100"}}'
+    cmds:
+      - echo "🏃 Running benchmarks for {{.MODELS}}..."
+      - |
+        {{.PYTHON}} benchmarks/performance_automation.py \
+          --models {{.MODELS}} \
+          --iterations {{.ITERATIONS}} \
+          --output benchmark-results
+
+  profile:
+    desc: Profile Python code
+    vars:
+      SCRIPT: '{{.SCRIPT | default "src/fast_vlm_ondevice/converter.py"}}'
+    cmds:
+      - echo "🔬 Profiling {{.SCRIPT}}..."
+      - "{{.PYTHON}} -m cProfile -o profile.stats {{.SCRIPT}}"
+      - |
+        {{.PYTHON}} -c "
+        import pstats
+        p = pstats.Stats('profile.stats')
+        p.sort_stats('cumulative').print_stats(20)
+        "
+
+  # iOS Development (macOS only)
+  ios:build:
+    desc: Build iOS Swift package
+    cmds:
+      - echo "📱 Building iOS package..."
+      - cd ios && swift build
+    platforms: [darwin]
+
+  ios:test:
+    desc: Run iOS tests
+    cmds:
+      - echo "🧪 Running iOS tests..."
+      - cd ios && swift test
+    platforms: [darwin]
+
+  # Maintenance Tasks
+  clean:
+    desc: Clean up build artifacts and caches
+    cmds:
+      - echo "🧹 Cleaning up build artifacts..."
+      - find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+      - find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
+      - find . -type d -name ".mypy_cache" -exec rm -rf {} + 2>/dev/null || true
+      - find . -type d -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null || true
+      - find . -type d -name "htmlcov" -exec rm -rf {} + 2>/dev/null || true
+      - find . -name "*.pyc" -delete 2>/dev/null || true
+      - find . -name ".coverage*" -delete 2>/dev/null || true
+      - echo "✅ Cleanup complete!"
+
+  deps:update:
+    desc: Update dependencies
+    cmds:
+      - echo "📦 Updating dependencies..."
+      - pip-compile requirements.in
+      - pip-compile requirements-dev.in
+      - "{{.PIP}} install -r requirements-dev.txt"
+      - echo "✅ Dependencies updated!"
+
+  # Utility Tasks
+  version:
+    desc: Show current project version
+    cmds:
+      - echo "📌 Current version:"
+      - |
+        {{.PYTHON}} -c "
+        import tomllib
+        with open('pyproject.toml', 'rb') as f:
+            data = tomllib.load(f)
+        print(data['project']['version'])
+        "
+
+  health:
+    desc: Show project health status
+    cmds:
+      - echo "🏥 Project health check:"
+      - echo "Python version:" && {{.PYTHON}} --version
+      - echo "Pip version:" && {{.PIP}} --version
+      - echo "Pre-commit:" && (pre-commit --version 2>/dev/null || echo 'Not installed')
+      - echo "Docker:" && (docker --version 2>/dev/null || echo 'Not available')
+      - echo "Git status:" && (git status --porcelain || echo "Not a git repository")
+
+  size:
+    desc: Analyze project size
+    cmds:
+      - echo "📊 Project size analysis:"
+      - echo "Total lines of Python code:"
+      - find . -name "*.py" -not -path "./.venv/*" -not -path "./build/*" | xargs wc -l | tail -1
+      - echo "Directory sizes:"
+      - du -sh src/ tests/ docs/ ios/ benchmarks/ scripts/ 2>/dev/null || true
+
+  # CI/CD Simulation
+  ci:
+    desc: Simulate CI pipeline locally
+    deps: [format, quality, test]
+    cmds:
+      - echo "🎯 CI pipeline simulation completed successfully!"
+
+  pre-commit:
+    desc: Run pre-commit hooks manually
+    cmds:
+      - echo "🪝 Running pre-commit hooks..."
+      - pre-commit run --all-files
