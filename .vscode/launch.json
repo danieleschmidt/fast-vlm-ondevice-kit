@@ -1,0 +1,121 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            }
+        },
+        {
+            "name": "Python: FastVLM Converter",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/fast_vlm_ondevice/converter.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "--model", "fast-vlm-base",
+                "--output", "FastVLM.mlpackage",
+                "--quantization", "int4"
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            }
+        },
+        {
+            "name": "Python: Run Tests",
+            "type": "python",
+            "request": "launch",
+            "module": "pytest",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "tests/",
+                "-v",
+                "--cov=src/fast_vlm_ondevice",
+                "--cov-report=html"
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            }
+        },
+        {
+            "name": "Python: Benchmark Performance",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/benchmarks/performance_automation.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "--models", "fast-vlm-base",
+                "--iterations", "10",
+                "--output", "benchmark-results"
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            }
+        },
+        {
+            "name": "Python: Download Checkpoints",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/download_checkpoints.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "--model", "fast-vlm-base",
+                "--target", "checkpoints/"
+            ]
+        },
+        {
+            "name": "Python: Quality Metrics",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/quality_metrics.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "--source", "src/",
+                "--report", "quality-report.html"
+            ]
+        },
+        {
+            "name": "Python: Debug Tests",
+            "type": "python",
+            "request": "launch",
+            "module": "pytest",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "${workspaceFolder}/tests/${fileBasenameNoExtension}.py",
+                "-v",
+                "-s",
+                "--tb=short"
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            }
+        },
+        {
+            "name": "Python: Attach to Process",
+            "type": "python",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5678
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "."
+                }
+            ]
+        }
+    ]
+}

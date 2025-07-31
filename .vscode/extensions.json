@@ -1,0 +1,68 @@
+{
+    "recommendations": [
+        // Python development
+        "ms-python.python",
+        "ms-python.black-formatter",
+        "ms-python.isort",
+        "ms-python.mypy-type-checker", 
+        "ms-python.flake8",
+        "charliermarsh.ruff",
+        
+        // Testing and debugging
+        "ms-python.debugpy",
+        "littlefoxteam.vscode-python-test-adapter",
+        "hbenl.vscode-test-explorer",
+        
+        // Jupyter and data science
+        "ms-toolsai.jupyter",
+        "ms-toolsai.jupyter-keymap",
+        "ms-toolsai.jupyter-renderers",
+        "ms-toolsai.vscode-jupyter-cell-tags",
+        "ms-toolsai.vscode-jupyter-slideshow",
+        
+        // Swift development (for iOS components)
+        "sswg.swift-lang",
+        "vadimcn.vscode-lldb",
+        
+        // Docker and containers
+        "ms-azuretools.vscode-docker",
+        "ms-vscode-remote.remote-containers",
+        
+        // Git and version control
+        "eamodio.gitlens",
+        "github.vscode-pull-request-github",
+        "github.vscode-github-actions",
+        
+        // AI assistance
+        "github.copilot",
+        "github.copilot-chat",
+        
+        // File formats and syntax
+        "ms-vscode.vscode-json",
+        "redhat.vscode-yaml",
+        "tamasfe.even-better-toml",
+        "yzhang.markdown-all-in-one",
+        "davidanson.vscode-markdownlint",
+        
+        // Code quality and security
+        "ms-vscode.vscode-eslint",
+        "streetsidesoftware.code-spell-checker",
+        "ms-vsliveshare.vsliveshare",
+        
+        // Productivity
+        "formulahendry.auto-rename-tag",
+        "christian-kohler.path-intellisense",
+        "visualstudioexptteam.vscodeintellicode",
+        "ms-vscode.vscode-typescript-next",
+        
+        // Theme and appearance (optional)
+        "pkief.material-icon-theme",
+        "github.github-vscode-theme"
+    ],
+    "unwantedRecommendations": [
+        // Avoid conflicting extensions
+        "ms-python.pylint",
+        "ms-python.pep8",
+        "dongli.python-preview"
+    ]
+}

@@ -1,0 +1,135 @@
+{
+    // Python configuration
+    "python.defaultInterpreterPath": "./venv/bin/python",
+    "python.terminal.activateEnvironment": true,
+    
+    // Formatting
+    "python.formatting.provider": "black",
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": false,
+    "editor.formatOnType": false,
+    
+    // Linting and type checking
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": false,
+    "python.linting.flake8Enabled": true,
+    "python.linting.mypyEnabled": true,
+    "python.linting.banditEnabled": true,
+    "ruff.enable": true,
+    "ruff.organizeImports": true,
+    
+    // Testing
+    "python.testing.pytestEnabled": true,
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestArgs": [
+        "tests",
+        "--cov=src/fast_vlm_ondevice",
+        "--cov-report=html",
+        "--cov-report=term-missing"
+    ],
+    "python.testing.autoTestDiscoverOnSaveEnabled": true,
+    
+    // Code actions on save
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": true,
+        "source.fixAll.ruff": true,
+        "source.fixAll.flake8": true
+    },
+    
+    // File associations
+    "files.associations": {
+        "*.toml": "toml",
+        "*.yml": "yaml",
+        "*.yaml": "yaml",
+        "Dockerfile*": "dockerfile",
+        ".dockerignore": "dockerignore",
+        ".gitignore": "ignore",
+        "*.md": "markdown"
+    },
+    
+    // File exclusions for cleaner workspace
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/.pytest_cache": true,
+        "**/.mypy_cache": true,
+        "**/.ruff_cache": true,
+        "**/htmlcov": true,
+        "**/.coverage": true,
+        "**/build": true,
+        "**/dist": true,
+        "**/*.egg-info": true,
+        "**/checkpoints": true,
+        "**/models": true,
+        "**/*.mlpackage": true,
+        "**/*.mlmodel": true,
+        "**/*.pth": true,
+        "**/reports": true,
+        "**/logs": true
+    },
+    
+    // Search exclusions
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/bower_components": true,
+        "**/*.code-search": true,
+        "**/__pycache__": true,
+        "**/.pytest_cache": true,
+        "**/.mypy_cache": true,
+        "**/.ruff_cache": true,
+        "**/htmlcov": true,
+        "**/build": true,
+        "**/dist": true,
+        "**/*.egg-info": true,
+        "**/checkpoints": true,
+        "**/models": true,
+        "**/*.mlpackage": true,
+        "**/reports": true
+    },
+    
+    // Jupyter configuration
+    "jupyter.askForKernelRestart": false,
+    "jupyter.interactiveWindow.textEditor.executeSelection": true,
+    
+    // Docker configuration
+    "docker.enableDockerComposeLanguageService": true,
+    "docker.composeCommand": "docker-compose",
+    
+    // Swift configuration (for iOS components)
+    "swift.path": "/usr/bin/swift",
+    "swift.buildPath": "ios/.build",
+    
+    // Markdown configuration
+    "markdown.preview.fontSize": 14,
+    "markdown.preview.lineHeight": 1.6,
+    
+    // Git configuration
+    "git.enableSmartCommit": true,
+    "git.confirmSync": false,
+    "git.autofetch": true,
+    
+    // Terminal configuration
+    "terminal.integrated.defaultProfile.osx": "zsh",
+    "terminal.integrated.defaultProfile.linux": "bash",
+    
+    // Workspace specific settings
+    "workbench.colorTheme": "Default Dark+",
+    "workbench.iconTheme": "vs-seti",
+    
+    // Ruler for line length (matches Black's 88 chars)
+    "editor.rulers": [88],
+    
+    // IntelliSense settings
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.completeFunctionParens": true,
+    
+    // Copilot settings (if available)
+    "github.copilot.enable": {
+        "*": true,
+        "yaml": true,
+        "plaintext": false,
+        "markdown": true,
+        "python": true,
+        "swift": true
+    }
+}
