@@ -1,0 +1,71 @@
+{
+  "timestamp": "2025-08-01T00:50:00.090785+00:00",
+  "repository": {
+    "name": "FastVLM On-Device Kit",
+    "maturity": "advanced",
+    "path": "/root/repo"
+  },
+  "discovery": {
+    "total_items": 7,
+    "avg_score": 32.46000000000001,
+    "categories": {
+      "maintenance": {
+        "count": 5,
+        "avg_score": 2.6919999999999997,
+        "total_effort": 2.5
+      },
+      "performance": {
+        "count": 1,
+        "avg_score": 13.459999999999999,
+        "total_effort": 4.0
+      },
+      "automation": {
+        "count": 1,
+        "avg_score": 13.459999999999999,
+        "total_effort": 6.0
+      }
+    }
+  },
+  "top_items": [
+    {
+      "id": "dep-1705300941",
+      "title": "Update dependency: blinker",
+      "category": "maintenance",
+      "score": 37.7,
+      "effort_hours": 0.5,
+      "source": "pip_outdated"
+    },
+    {
+      "id": "dep-514892652",
+      "title": "Update dependency: cryptography",
+      "category": "maintenance",
+      "score": 37.7,
+      "effort_hours": 0.5,
+      "source": "pip_outdated"
+    },
+    {
+      "id": "dep-1411339648",
+      "title": "Update dependency: dbus-python",
+      "category": "maintenance",
+      "score": 37.7,
+      "effort_hours": 0.5,
+      "source": "pip_outdated"
+    },
+    {
+      "id": "dep-1385418290",
+      "title": "Update dependency: httplib2",
+      "category": "maintenance",
+      "score": 37.7,
+      "effort_hours": 0.5,
+      "source": "pip_outdated"
+    },
+    {
+      "id": "dep-4378427",
+      "title": "Update dependency: launchpadlib",
+      "category": "maintenance",
+      "score": 37.7,
+      "effort_hours": 0.5,
+      "source": "pip_outdated"
+    }
+  ]
+}

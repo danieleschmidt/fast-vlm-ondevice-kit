@@ -1,0 +1,54 @@
+scoring:
+  weights:
+    advanced:
+      wsjf: 0.5
+      ice: 0.1
+      technicalDebt: 0.3
+      security: 0.1
+  
+  thresholds:
+    minScore: 15
+    maxRisk: 0.7
+    securityBoost: 2.0
+    complianceBoost: 1.8
+
+discovery:
+  sources:
+    - gitHistory
+    - staticAnalysis
+    - issueTrackers
+    - vulnerabilityDatabases
+    - performanceMonitoring
+    - userFeedback
+  
+  tools:
+    staticAnalysis:
+      - mypy
+      - bandit
+      - safety
+      - flake8
+    security:
+      - bandit
+      - safety
+      - trivy
+    performance:
+      - pytest-benchmark
+      - memory-profiler
+
+execution:
+  maxConcurrentTasks: 1
+  testRequirements:
+    minCoverage: 80
+    performanceRegression: 5
+  rollbackTriggers:
+    - testFailure
+    - buildFailure
+    - securityViolation
+
+repository:
+  maturity: "advanced"
+  primaryLanguage: "python"
+  frameworks: ["pytorch", "coreml", "swift"]
+  testingFramework: "pytest"
+  linting: ["black", "isort", "mypy", "flake8"]
+  security: ["bandit", "safety"]
