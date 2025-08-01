@@ -141,3 +141,43 @@ deps-update:		## Update dependency versions
 
 deps-sync:		## Sync installed packages with requirements
 	pip-sync requirements.txt requirements-dev.txt
+
+# Autonomous SDLC Operations
+autonomous-discovery:	## Run autonomous value discovery
+	python3 scripts/autonomous_value_discovery.py
+
+autonomous-execute:	## Execute highest-value item from backlog
+	python3 scripts/value_executor.py
+
+autonomous-optimize:	## Run continuous optimization analysis
+	python3 scripts/continuous_optimization.py
+
+autonomous-cycle:	## Run complete autonomous SDLC cycle
+	@echo "🚀 Running Autonomous SDLC Cycle..."
+	python3 scripts/autonomous_value_discovery.py
+	python3 scripts/value_executor.py
+	python3 scripts/continuous_optimization.py
+	@echo "✅ Autonomous cycle completed"
+
+# Value Metrics and Reporting
+value-report:		## Generate value delivery report
+	@echo "📊 Generating value delivery report..."
+	@if [ -f ".terragon/value-metrics.json" ]; then \
+		python3 -c "import json; data = json.load(open('.terragon/value-metrics.json')); print(f'📈 Discovered {data[\"discovery\"][\"total_items\"]} value items'); print(f'⭐ Average score: {data[\"discovery\"][\"avg_score\"]:.1f}')"; \
+	else \
+		echo "No value metrics found. Run 'make autonomous-discovery' first"; \
+	fi
+
+show-backlog:		## Show current value backlog
+	@if [ -f "BACKLOG.md" ]; then \
+		head -20 BACKLOG.md; \
+		echo "..."; \
+		echo "💡 Full backlog available in BACKLOG.md"; \
+	else \
+		echo "No backlog found. Run 'make autonomous-discovery' first"; \
+	fi
+
+health-check:		## Check repository health
+	@echo "🏥 Repository Health Check..."
+	@python3 scripts/continuous_optimization.py
+	@echo "✅ Health check completed"
