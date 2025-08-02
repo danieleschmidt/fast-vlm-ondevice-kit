@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 GitHub Discussions
+    url: https://github.com/danieleschmidt/fast-vlm-ondevice-kit/discussions
+    about: Ask questions and discuss ideas with the community
+  - name: 📚 Documentation
+    url: https://fast-vlm-ondevice.readthedocs.io
+    about: Check the documentation for guides and API references
+  - name: 🐛 Security Issues
+    url: mailto:security@yourdomain.com
+    about: Report security vulnerabilities privately
