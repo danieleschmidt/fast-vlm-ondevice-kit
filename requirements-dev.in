@@ -16,7 +16,7 @@ bandit[toml]>=1.7.5,<2.0.0
 safety>=2.3.0,<3.0.0
 
 # Pre-commit hooks
-pre-commit>=3.3.0,<4.0.0
+pre-commit>=3.3.0,<5.0.0
 
 # Multi-environment testing
 tox>=4.0.0,<5.0.0
