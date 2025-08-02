@@ -1,0 +1,98 @@
+{
+  "name": "fast-vlm-ondevice-kit",
+  "version": "1.0.0",
+  "description": "Production-ready Vision-Language Models for mobile devices",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "python -m fast_vlm_ondevice.server --dev",
+    "test": "python -m pytest tests/ -v",
+    "test:watch": "python -m pytest tests/ -v --watch",
+    "test:cov": "python -m pytest tests/ --cov=src/fast_vlm_ondevice --cov-report=html --cov-report=term-missing",
+    "test:ios": "cd ios && swift test",
+    
+    "lint": "npm run lint:python && npm run lint:swift",
+    "lint:python": "black --check src tests && isort --check-only src tests && mypy src",
+    "lint:swift": "cd ios && swiftlint",
+    
+    "format": "npm run format:python && npm run format:swift",
+    "format:python": "black src tests && isort src tests",
+    "format:swift": "cd ios && swiftformat .",
+    
+    "typecheck": "mypy src",
+    "security": "bandit -r src && safety check",
+    
+    "build": "npm run build:python && npm run build:ios",
+    "build:python": "python -m build",
+    "build:ios": "cd ios && swift build",
+    "build:docs": "cd docs && make html",
+    
+    "benchmark": "python benchmarks/run_benchmarks.py",
+    "benchmark:ios": "cd ios && swift run FastVLMBenchmarks",
+    
+    "clean": "npm run clean:python && npm run clean:ios && npm run clean:cache",
+    "clean:python": "find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true",
+    "clean:ios": "cd ios && swift package clean",
+    "clean:cache": "rm -rf .pytest_cache .mypy_cache .ruff_cache htmlcov",
+    
+    "setup": "pip install -e \".[dev]\" && pre-commit install",
+    "setup:ios": "cd ios && swift package resolve",
+    
+    "release": "semantic-release",
+    "release:dry": "semantic-release --dry-run",
+    
+    "docker:build": "docker build -t fast-vlm-ondevice .",
+    "docker:run": "docker run -it fast-vlm-ondevice",
+    "docker:test": "docker-compose -f docker/docker-compose.test.yml up --build",
+    
+    "docs:serve": "cd docs && python -m http.server 8000",
+    "docs:build": "cd docs && make html",
+    "docs:clean": "cd docs && make clean",
+    
+    "checkpoints:download": "python scripts/download_checkpoints.py --all",
+    "checkpoints:tiny": "python scripts/download_checkpoints.py --model tiny",
+    "checkpoints:base": "python scripts/download_checkpoints.py --model base",
+    "checkpoints:large": "python scripts/download_checkpoints.py --model large",
+    
+    "convert:example": "python examples/convert_model_example.py",
+    "demo:ios": "cd ios && xcodebuild -scheme FastVLMDemo -destination 'platform=iOS Simulator,name=iPhone 15 Pro' build",
+    
+    "ci:install": "pip install -e \".[dev]\"",
+    "ci:test": "npm run test:cov && npm run test:ios",
+    "ci:lint": "npm run lint",
+    "ci:security": "npm run security",
+    "ci:build": "npm run build"
+  },
+  "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^9.2.6",
+    "semantic-release": "^22.0.12"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/danieleschmidt/fast-vlm-ondevice-kit.git"
+  },
+  "keywords": [
+    "vision-language-model",
+    "mobile-ai",
+    "core-ml",
+    "ios",
+    "pytorch",
+    "quantization",
+    "apple-neural-engine",
+    "on-device-ai",
+    "computer-vision",
+    "natural-language-processing"
+  ],
+  "author": "Daniel Schmidt <fast-vlm@yourdomain.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/danieleschmidt/fast-vlm-ondevice-kit/issues"
+  },
+  "homepage": "https://github.com/danieleschmidt/fast-vlm-ondevice-kit#readme"
+}
