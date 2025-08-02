@@ -1,0 +1,1 @@
+"""End-to-end tests package for FastVLM On-Device Kit."""
