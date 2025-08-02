@@ -1,0 +1,209 @@
+{
+  "project": {
+    "name": "FastVLM On-Device Kit",
+    "description": "Production-ready Vision-Language Models for mobile devices",
+    "repository": "danieleschmidt/fast-vlm-ondevice-kit",
+    "created": "2024-12-01T00:00:00Z",
+    "updated": "2025-01-15T00:00:00Z"
+  },
+  "metrics": {
+    "code_quality": {
+      "lines_of_code": {
+        "python": 15432,
+        "swift": 3245,
+        "markdown": 8901,
+        "yaml": 1234,
+        "total": 28812
+      },
+      "test_coverage": {
+        "python": 92.5,
+        "swift": 85.0,
+        "overall": 90.2,
+        "target": 85.0
+      },
+      "technical_debt": {
+        "code_smells": 12,
+        "bugs": 2,
+        "vulnerabilities": 0,
+        "security_hotspots": 3,
+        "maintainability_rating": "A",
+        "reliability_rating": "A",
+        "security_rating": "A"
+      },
+      "complexity": {
+        "cyclomatic_complexity": {
+          "average": 3.2,
+          "max": 12,
+          "threshold": 15
+        },
+        "cognitive_complexity": {
+          "average": 4.1,
+          "high_complexity_methods": 5
+        }
+      }
+    },
+    "development": {
+      "commit_frequency": {
+        "daily_average": 4.2,
+        "weekly_total": 29,
+        "monthly_total": 126
+      },
+      "pull_requests": {
+        "open": 3,
+        "merged_last_month": 18,
+        "average_review_time_hours": 8.5,
+        "average_merge_time_hours": 12.3
+      },
+      "contributors": {
+        "active_last_month": 5,
+        "total": 12,
+        "new_contributors_last_month": 2
+      },
+      "branches": {
+        "total": 24,
+        "active": 8,
+        "stale": 3
+      }
+    },
+    "performance": {
+      "model_conversion": {
+        "average_time_seconds": {
+          "tiny": 45,
+          "base": 120,
+          "large": 280
+        },
+        "success_rate": 98.5,
+        "memory_usage_peak_mb": {
+          "tiny": 850,
+          "base": 1200,
+          "large": 2100
+        }
+      },
+      "inference_performance": {
+        "latency_ms": {
+          "iPhone15Pro": {
+            "tiny": 89,
+            "base": 187,
+            "large": 243
+          },
+          "iPhone14": {
+            "tiny": 124,
+            "base": 245,
+            "large": 320
+          }
+        },
+        "accuracy": {
+          "vqa_v2": {
+            "tiny": 0.683,
+            "base": 0.712,
+            "large": 0.748
+          }
+        },
+        "throughput_qps": {
+          "iPhone15Pro": 5.3,
+          "iPhone14": 4.1
+        }
+      },
+      "ci_cd": {
+        "build_time_minutes": {
+          "ci": 12.5,
+          "full_build": 28.3
+        },
+        "deployment_frequency": "daily",
+        "lead_time_hours": 6.2,
+        "mttr_hours": 2.1,
+        "change_failure_rate": 0.03
+      }
+    },
+    "quality_gates": {
+      "coverage_threshold": 85.0,
+      "performance_regression_threshold": 0.05,
+      "security_scan_passing": true,
+      "documentation_coverage": 0.89,
+      "api_breaking_changes": false
+    },
+    "dependencies": {
+      "total_dependencies": 47,
+      "direct_dependencies": 12,
+      "outdated_dependencies": 3,
+      "security_vulnerabilities": 0,
+      "license_compliance": true,
+      "dependency_freshness_score": 0.91
+    },
+    "community": {
+      "github_stars": 342,
+      "github_forks": 67,
+      "github_watchers": 23,
+      "github_issues": {
+        "open": 8,
+        "closed": 45
+      },
+      "documentation_views": {
+        "monthly": 2450,
+        "total": 12800
+      },
+      "downloads": {
+        "pypi_monthly": 1250,
+        "github_releases": 890
+      }
+    },
+    "automation": {
+      "automated_tests": 387,
+      "test_execution_time_minutes": 8.5,
+      "automated_deployments": true,
+      "dependency_updates": {
+        "automated": true,
+        "frequency": "weekly",
+        "success_rate": 0.95
+      },
+      "code_reviews": {
+        "automated_checks": 12,
+        "manual_review_required": true,
+        "average_checks_passed": 11.2
+      }
+    }
+  },
+  "trends": {
+    "last_30_days": {
+      "commits": 126,
+      "issues_closed": 15,
+      "pull_requests_merged": 18,
+      "test_coverage_change": "+2.1%",
+      "performance_improvement": "+5.3%",
+      "security_issues_resolved": 2
+    },
+    "quarterly": {
+      "feature_releases": 3,
+      "bug_fixes": 24,
+      "performance_optimizations": 8,
+      "security_updates": 5,
+      "documentation_updates": 12
+    }
+  },
+  "goals": {
+    "2025_q1": {
+      "test_coverage": 95.0,
+      "performance_target": "150ms iPhone15Pro",
+      "community_growth": "1000 stars",
+      "documentation_completion": 95.0
+    },
+    "2025_q2": {
+      "multi_platform_support": true,
+      "advanced_quantization": true,
+      "enterprise_features": true
+    }
+  },
+  "metadata": {
+    "last_updated": "2025-01-15T12:00:00Z",
+    "collection_frequency": "daily",
+    "data_sources": [
+      "github_api",
+      "codecov",
+      "sonarqube",
+      "prometheus",
+      "pypi",
+      "app_store_connect"
+    ],
+    "schema_version": "1.0"
+  }
+}
