@@ -1,0 +1,426 @@
+# FastVLM On-Device Kit - Security Scanning Workflow
+# Copy this file to .github/workflows/security-scan.yml
+
+name: Security Scan
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run weekly security scans on Sunday at 3 AM UTC
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+    inputs:
+      scan_type:
+        description: 'Type of security scan'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+        - full
+        - dependencies
+        - code
+        - docker
+
+permissions:
+  security-events: write
+  contents: read
+
+jobs:
+  # Dependency vulnerability scanning
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.scan_type == 'full' || github.event.inputs.scan_type == 'dependencies' || github.event.inputs.scan_type == '' }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+        pip install safety pip-audit
+    
+    # Safety - checks Python packages for known vulnerabilities
+    - name: Run Safety check
+      run: |
+        safety check --json --output safety-report.json || true
+        safety check --output safety-report.txt || true
+    
+    # pip-audit - official PyPA tool for auditing Python packages
+    - name: Run pip-audit
+      run: |
+        pip-audit --format=json --output=pip-audit.json || true
+        pip-audit --format=cyclonedx-json --output=pip-audit-cyclonedx.json || true
+    
+    # Snyk - comprehensive dependency scanning
+    - name: Run Snyk to check for vulnerabilities
+      uses: snyk/actions/python@master
+      continue-on-error: true
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        args: --severity-threshold=medium --json-file-output=snyk-dependencies.json
+    
+    - name: Upload dependency scan results
+      uses: actions/upload-artifact@v3
+      with:
+        name: dependency-scan-results
+        path: |
+          safety-report.json
+          safety-report.txt
+          pip-audit.json
+          pip-audit-cyclonedx.json
+          snyk-dependencies.json
+
+  # Static code analysis for security issues
+  code-security-scan:
+    name: Code Security Analysis
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.scan_type == 'full' || github.event.inputs.scan_type == 'code' || github.event.inputs.scan_type == '' }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for better analysis
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install security tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install bandit[toml] semgrep
+    
+    # Bandit - Python security linter
+    - name: Run Bandit security scan
+      run: |
+        bandit -r src/ \
+          -f json -o bandit-report.json \
+          -f txt -o bandit-report.txt \
+          -ll -i || true
+    
+    # Semgrep - multi-language static analysis
+    - name: Run Semgrep security scan
+      run: |
+        semgrep --config=auto \
+          --json --output=semgrep-report.json \
+          --sarif --output=semgrep-results.sarif \
+          src/ || true
+    
+    # CodeQL analysis
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: python
+        queries: security-and-quality
+    
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v2
+    
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+      with:
+        category: "/language:python"
+    
+    # Upload Semgrep results to GitHub Security tab
+    - name: Upload Semgrep SARIF
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: semgrep-results.sarif
+    
+    - name: Upload code security scan results
+      uses: actions/upload-artifact@v3
+      with:
+        name: code-security-scan-results
+        path: |
+          bandit-report.json
+          bandit-report.txt
+          semgrep-report.json
+          semgrep-results.sarif
+
+  # Docker image security scanning
+  docker-security-scan:
+    name: Docker Security Scan
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.scan_type == 'full' || github.event.inputs.scan_type == 'docker' || github.event.inputs.scan_type == '' }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Build Docker image for scanning
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        target: production
+        tags: fastvm:scan
+        load: true
+        cache-from: type=gha
+    
+    # Trivy - comprehensive vulnerability scanner
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'fastvm:scan'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Run Trivy JSON report
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'fastvm:scan'
+        format: 'json'
+        output: 'trivy-results.json'
+    
+    # Snyk Container - Docker image scanning
+    - name: Run Snyk Container scan
+      uses: snyk/actions/docker@master
+      continue-on-error: true
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        image: fastvm:scan
+        args: --severity-threshold=medium --json-file-output=snyk-container.json
+    
+    # Docker Scout (if available)
+    - name: Docker Scout scan
+      uses: docker/scout-action@v1
+      continue-on-error: true
+      with:
+        command: cves
+        image: fastvm:scan
+        sarif-file: scout-results.sarif
+        summary: true
+    
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: trivy-results.sarif
+    
+    - name: Upload Docker Scout results
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      continue-on-error: true
+      with:
+        sarif_file: scout-results.sarif
+    
+    - name: Upload container scan results
+      uses: actions/upload-artifact@v3
+      with:
+        name: container-security-scan-results
+        path: |
+          trivy-results.sarif
+          trivy-results.json
+          snyk-container.json
+          scout-results.sarif
+
+  # License compliance check
+  license-compliance:
+    name: License Compliance Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+        pip install pip-licenses
+    
+    - name: Generate license report
+      run: |
+        pip-licenses --format=json --output-file=licenses.json
+        pip-licenses --format=csv --output-file=licenses.csv
+        pip-licenses --format=html --output-file=licenses.html
+    
+    - name: Check for license issues
+      run: |
+        # Check for problematic licenses
+        python -c "
+        import json
+        with open('licenses.json') as f:
+            licenses = json.load(f)
+        
+        problematic = ['GPL', 'AGPL', 'LGPL']
+        issues = []
+        
+        for pkg in licenses:
+            license_name = pkg.get('License', '').upper()
+            for prob in problematic:
+                if prob in license_name:
+                    issues.append(f'{pkg[\"Name\"]} uses {license_name}')
+        
+        if issues:
+            print('License compliance issues found:')
+            for issue in issues:
+                print(f'  - {issue}')
+            exit(1)
+        else:
+            print('No license compliance issues found')
+        "
+    
+    - name: Upload license reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: license-compliance-results
+        path: |
+          licenses.json
+          licenses.csv
+          licenses.html
+
+  # Secrets scanning
+  secrets-scan:
+    name: Secrets Scanning
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for comprehensive scan
+    
+    - name: Install TruffleHog
+      run: |
+        curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
+    
+    - name: Run TruffleHog secrets scan
+      run: |
+        trufflehog git file://. \
+          --json \
+          --output trufflehog-results.json \
+          --no-update || true
+    
+    - name: Check for secrets
+      run: |
+        if [ -s trufflehog-results.json ]; then
+          echo "⚠️ Potential secrets found!"
+          cat trufflehog-results.json
+          exit 1
+        else
+          echo "✅ No secrets found"
+        fi
+    
+    - name: Upload secrets scan results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: secrets-scan-results
+        path: trufflehog-results.json
+
+  # Generate comprehensive security report
+  security-report:
+    name: Generate Security Report
+    runs-on: ubuntu-latest
+    needs: [dependency-scan, code-security-scan, docker-security-scan, license-compliance, secrets-scan]
+    if: always()
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Download all scan results
+      uses: actions/download-artifact@v3
+    
+    - name: Generate comprehensive security report
+      run: |
+        mkdir -p security-report
+        
+        cat > security-report/README.md << 'EOF'
+        # FastVLM On-Device Kit Security Report
+        
+        This report contains the results of comprehensive security scanning performed on the codebase.
+        
+        ## Scan Results Summary
+        
+        - **Dependency Scan**: ${{ needs.dependency-scan.result }}
+        - **Code Security Scan**: ${{ needs.code-security-scan.result }}
+        - **Docker Security Scan**: ${{ needs.docker-security-scan.result }}
+        - **License Compliance**: ${{ needs.license-compliance.result }}
+        - **Secrets Scan**: ${{ needs.secrets-scan.result }}
+        
+        ## Report Timestamp
+        
+        Generated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+        Commit: ${{ github.sha }}
+        Branch: ${{ github.ref_name }}
+        
+        ## Next Steps
+        
+        1. Review all identified issues
+        2. Prioritize fixes based on severity
+        3. Update dependencies with known vulnerabilities
+        4. Address any license compliance issues
+        5. Remove any exposed secrets
+        
+        ## Scan Artifacts
+        
+        All detailed scan results are available in the respective artifact directories.
+        EOF
+        
+        # Copy all results to report directory
+        find . -name "*-results" -type d -exec cp -r {} security-report/ \; || true
+        find . -name "*-scan-results" -type d -exec cp -r {} security-report/ \; || true
+    
+    - name: Upload comprehensive security report
+      uses: actions/upload-artifact@v3
+      with:
+        name: comprehensive-security-report
+        path: security-report/
+    
+    - name: Create security issue if critical findings
+      if: needs.dependency-scan.result == 'failure' || needs.code-security-scan.result == 'failure' || needs.secrets-scan.result == 'failure'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const title = `🚨 Critical Security Issues Found - ${new Date().toISOString().split('T')[0]}`;
+          const body = `Critical security issues have been detected in the FastVLM On-Device Kit repository.
+          
+          **Scan Results:**
+          - Dependency Scan: ${{ needs.dependency-scan.result }}
+          - Code Security Scan: ${{ needs.code-security-scan.result }}
+          - Docker Security Scan: ${{ needs.docker-security-scan.result }}
+          - License Compliance: ${{ needs.license-compliance.result }}
+          - Secrets Scan: ${{ needs.secrets-scan.result }}
+          
+          **Action Required:**
+          Please review the security scan artifacts and address all critical and high-severity issues.
+          
+          **Workflow Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          
+          **Security Report:** Download the comprehensive-security-report artifact from the workflow run.`;
+          
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: title,
+            body: body,
+            labels: ['security', 'critical', 'priority-high'],
+            assignees: ['${{ github.actor }}']
+          });

@@ -1,0 +1,353 @@
+# FastVLM On-Device Kit - Continuous Integration Workflow
+# Copy this file to .github/workflows/ci.yml
+
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+  CACHE_VERSION: v1
+
+jobs:
+  # Quality checks job
+  quality:
+    name: Code Quality & Security
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for better analysis
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+    
+    - name: Code formatting check
+      run: |
+        black --check --diff src tests
+        isort --check-only --diff src tests
+    
+    - name: Linting
+      run: |
+        flake8 src tests
+        mypy src
+    
+    - name: Security scanning
+      run: |
+        bandit -r src -f json -o bandit-report.json
+        safety check --json --output safety-report.json
+    
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          bandit-report.json
+          safety-report.json
+
+  # Python testing across versions
+  test-python:
+    name: Python Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ['3.10', '3.11', '3.12']
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+    
+    - name: Run tests with coverage
+      run: |
+        pytest tests/ -v \
+          --cov=src/fast_vlm_ondevice \
+          --cov-report=xml \
+          --cov-report=html \
+          --junitxml=pytest-results.xml
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: python-${{ matrix.python-version }}
+        name: codecov-${{ matrix.os }}-py${{ matrix.python-version }}
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results-${{ matrix.os }}-py${{ matrix.python-version }}
+        path: |
+          pytest-results.xml
+          htmlcov/
+
+  # iOS/Swift testing
+  test-ios:
+    name: iOS/Swift Tests
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+    
+    - name: Cache Swift packages
+      uses: actions/cache@v3
+      with:
+        path: ios/.build
+        key: ${{ runner.os }}-swift-${{ hashFiles('ios/Package.swift') }}
+        restore-keys: |
+          ${{ runner.os }}-swift-
+    
+    - name: Build Swift package
+      run: |
+        cd ios
+        swift build -c release
+    
+    - name: Run Swift tests
+      run: |
+        cd ios
+        swift test --enable-code-coverage
+    
+    - name: Generate code coverage
+      run: |
+        cd ios
+        xcrun llvm-cov export -format="lcov" \
+          .build/debug/FastVLMKitPackageTests.xctest/Contents/MacOS/FastVLMKitPackageTests \
+          -instr-profile .build/debug/codecov/default.profdata > coverage.lcov
+    
+    - name: Upload iOS coverage
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./ios/coverage.lcov
+        flags: ios
+        name: codecov-ios
+
+  # Performance benchmarks
+  benchmark:
+    name: Performance Benchmarks
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+        pip install pytest-benchmark
+    
+    - name: Run benchmarks
+      run: |
+        pytest tests/performance/ \
+          --benchmark-only \
+          --benchmark-json=benchmark-results.json \
+          --benchmark-sort=mean
+    
+    - name: Store benchmark results
+      uses: benchmark-action/github-action-benchmark@v1
+      with:
+        tool: 'pytest'
+        output-file-path: benchmark-results.json
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        auto-push: true
+
+  # Documentation build
+  docs:
+    name: Documentation Build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install documentation dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install sphinx sphinx-rtd-theme myst-parser
+    
+    - name: Build documentation
+      run: |
+        cd docs
+        make html
+    
+    - name: Upload documentation
+      uses: actions/upload-pages-artifact@v2
+      with:
+        path: docs/_build/html
+
+  # Docker build and test
+  docker:
+    name: Docker Build & Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Build development image
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        target: development
+        tags: fastvm:dev
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+    
+    - name: Build production image
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        target: production
+        tags: fastvm:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+    
+    - name: Test in Docker
+      run: |
+        docker run --rm fastvm:dev make test-fast
+    
+    - name: Security scan with Trivy
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'fastvm:latest'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # Integration tests
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [quality, test-python]
+    
+    strategy:
+      matrix:
+        test-suite: [converter, ios-integration, e2e]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+    
+    - name: Run integration tests
+      run: |
+        pytest tests/integration/ -v -m "${{ matrix.test-suite }}" \
+          --junitxml=integration-results-${{ matrix.test-suite }}.xml
+    
+    - name: Upload integration test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: integration-results-${{ matrix.test-suite }}
+        path: integration-results-${{ matrix.test-suite }}.xml
+
+  # Dependency analysis
+  dependencies:
+    name: Dependency Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install pip-audit
+      run: pip install pip-audit
+    
+    - name: Audit dependencies
+      run: |
+        pip-audit --format=json --output=dependency-audit.json
+    
+    - name: Upload dependency audit
+      uses: actions/upload-artifact@v3
+      with:
+        name: dependency-audit
+        path: dependency-audit.json
+
+  # Notification on failure
+  notify:
+    name: Notify on Failure
+    runs-on: ubuntu-latest
+    needs: [quality, test-python, test-ios, docs, docker, integration]
+    if: failure() && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Notify Slack
+      uses: 8398a7/action-slack@v3
+      with:
+        status: failure
+        channel: '#fastvm-ci'
+        text: 'CI pipeline failed on main branch'
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

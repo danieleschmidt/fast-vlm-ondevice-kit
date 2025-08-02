@@ -1,0 +1,406 @@
+# FastVLM On-Device Kit - Continuous Deployment Workflow
+# Copy this file to .github/workflows/cd.yml
+
+name: CD
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  release:
+    types: [ published ]
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+
+jobs:
+  # Release preparation
+  prepare-release:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+      is-prerelease: ${{ steps.check-prerelease.outputs.is-prerelease }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Get version from tag
+      id: get-version
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Release version: $VERSION"
+    
+    - name: Check if prerelease
+      id: check-prerelease
+      run: |
+        if [[ "${{ steps.get-version.outputs.version }}" =~ (alpha|beta|rc) ]]; then
+          echo "is-prerelease=true" >> $GITHUB_OUTPUT
+        else
+          echo "is-prerelease=false" >> $GITHUB_OUTPUT
+        fi
+
+  # Build and test before deployment
+  build-and-test:
+    name: Build & Test for Deployment
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+        pip install build twine
+    
+    - name: Run comprehensive tests
+      run: |
+        make check-ci
+    
+    - name: Build Python package
+      run: |
+        python -m build
+    
+    - name: Verify package
+      run: |
+        twine check dist/*
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: python-package-${{ matrix.os }}
+        path: dist/
+
+  # Build iOS framework
+  build-ios:
+    name: Build iOS Framework
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+    
+    - name: Build iOS framework
+      run: |
+        cd ios
+        swift build -c release
+        swift package archive-framework
+    
+    - name: Upload iOS artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: ios-framework
+        path: ios/.build/release/
+
+  # Build Docker images
+  build-docker:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+    needs: [build-and-test]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v4
+      with:
+        images: ghcr.io/${{ github.repository }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
+    
+    - name: Build and push production image
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        target: production
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+    
+    - name: Build and push converter image
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        file: docker/Dockerfile.converter
+        push: true
+        tags: ghcr.io/${{ github.repository }}/converter:${{ steps.meta.outputs.version }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  # Deploy to PyPI
+  deploy-pypi:
+    name: Deploy to PyPI
+    runs-on: ubuntu-latest
+    needs: [prepare-release, build-and-test]
+    if: startsWith(github.ref, 'refs/tags/v')
+    environment: pypi
+    
+    steps:
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: python-package-ubuntu-latest
+        path: dist/
+    
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        password: ${{ secrets.PYPI_API_TOKEN }}
+        skip-existing: true
+
+  # Deploy to TestPyPI for prereleases
+  deploy-test-pypi:
+    name: Deploy to TestPyPI
+    runs-on: ubuntu-latest
+    needs: [prepare-release, build-and-test]
+    if: startsWith(github.ref, 'refs/tags/v') && needs.prepare-release.outputs.is-prerelease == 'true'
+    environment: testpypi
+    
+    steps:
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: python-package-ubuntu-latest
+        path: dist/
+    
+    - name: Publish to TestPyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        repository-url: https://test.pypi.org/legacy/
+        skip-existing: true
+
+  # Create GitHub Release
+  create-github-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [prepare-release, build-and-test, build-ios]
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+    
+    - name: Generate release notes
+      id: release-notes
+      run: |
+        # Generate changelog since last tag
+        LAST_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+        if [ -n "$LAST_TAG" ]; then
+          echo "RELEASE_NOTES<<EOF" >> $GITHUB_OUTPUT
+          echo "## Changes since $LAST_TAG" >> $GITHUB_OUTPUT
+          git log --oneline --pretty=format:"- %s (%h)" $LAST_TAG..HEAD >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        else
+          echo "RELEASE_NOTES=Initial release" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.ref_name }}
+        name: FastVLM On-Device Kit ${{ needs.prepare-release.outputs.version }}
+        body: |
+          ${{ steps.release-notes.outputs.RELEASE_NOTES }}
+          
+          ## Installation
+          
+          ### Python Package
+          ```bash
+          pip install fast-vlm-ondevice==${{ needs.prepare-release.outputs.version }}
+          ```
+          
+          ### Docker
+          ```bash
+          docker pull ghcr.io/${{ github.repository }}:${{ needs.prepare-release.outputs.version }}
+          ```
+          
+          ## Verification
+          
+          You can verify the authenticity of these artifacts using the checksums below:
+        files: |
+          python-package-ubuntu-latest/*
+          ios-framework/*
+        prerelease: ${{ needs.prepare-release.outputs.is-prerelease }}
+        generate_release_notes: true
+        make_latest: ${{ needs.prepare-release.outputs.is-prerelease == 'false' }}
+
+  # Deploy documentation
+  deploy-docs:
+    name: Deploy Documentation
+    runs-on: ubuntu-latest
+    needs: [build-and-test]
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    
+    permissions:
+      pages: write
+      id-token: write
+    
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install documentation dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install sphinx sphinx-rtd-theme myst-parser
+        pip install -e .
+    
+    - name: Build documentation
+      run: |
+        cd docs
+        make html
+    
+    - name: Upload documentation artifact
+      uses: actions/upload-pages-artifact@v2
+      with:
+        path: docs/_build/html
+    
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v2
+
+  # Update Homebrew formula (for macOS users)
+  update-homebrew:
+    name: Update Homebrew Formula
+    runs-on: macos-latest
+    needs: [create-github-release, deploy-pypi]
+    if: startsWith(github.ref, 'refs/tags/v') && needs.prepare-release.outputs.is-prerelease == 'false'
+    
+    steps:
+    - name: Update Homebrew formula
+      uses: mislav/bump-homebrew-formula-action@v2
+      with:
+        formula-name: fast-vlm-ondevice
+        homebrew-tap: ${{ github.repository_owner }}/homebrew-tap
+        download-url: https://github.com/${{ github.repository }}/archive/${{ github.ref_name }}.tar.gz
+        commit-message: |
+          fast-vlm-ondevice ${{ needs.prepare-release.outputs.version }}
+          
+          Created by the FastVLM On-Device Kit CD pipeline
+      env:
+        COMMITTER_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+
+  # Notify stakeholders
+  notify-deployment:
+    name: Notify Deployment
+    runs-on: ubuntu-latest
+    needs: [create-github-release, deploy-pypi, deploy-docs]
+    if: always() && startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: Notify Slack
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#fastvm-releases'
+        text: |
+          FastVLM On-Device Kit ${{ needs.prepare-release.outputs.version }} deployment completed!
+          - PyPI: ${{ needs.deploy-pypi.result }}
+          - GitHub Release: ${{ needs.create-github-release.result }}
+          - Documentation: ${{ needs.deploy-docs.result }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    
+    - name: Create deployment issue
+      if: failure()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const title = `Deployment failed for version ${{ needs.prepare-release.outputs.version }}`;
+          const body = `The deployment pipeline for FastVLM On-Device Kit ${{ needs.prepare-release.outputs.version }} has failed.
+          
+          **Failed jobs:**
+          - PyPI: ${{ needs.deploy-pypi.result }}
+          - GitHub Release: ${{ needs.create-github-release.result }}
+          - Documentation: ${{ needs.deploy-docs.result }}
+          
+          Please investigate and re-run the deployment if needed.
+          
+          **Workflow run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`;
+          
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: title,
+            body: body,
+            labels: ['deployment', 'bug', 'priority-high']
+          });
+
+  # Security scan after deployment
+  post-deployment-security:
+    name: Post-Deployment Security Scan
+    runs-on: ubuntu-latest
+    needs: [build-docker]
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: Run Snyk security scan
+      uses: snyk/actions/docker@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        image: ghcr.io/${{ github.repository }}:${{ needs.prepare-release.outputs.version }}
+        args: --severity-threshold=high
+    
+    - name: Upload Snyk results
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: snyk.sarif
