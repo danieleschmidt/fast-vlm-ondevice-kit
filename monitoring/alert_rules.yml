@@ -1,0 +1,183 @@
+groups:
+  - name: fastvm_performance_alerts
+    rules:
+      # Model conversion performance alerts
+      - alert: SlowModelConversion
+        expr: conversion_duration_seconds > 300
+        for: 5m
+        labels:
+          severity: warning
+          service: fastvm-converter
+        annotations:
+          summary: "Model conversion taking too long"
+          description: "Model conversion for {{ $labels.model_variant }} with {{ $labels.quantization }} quantization took {{ $value }} seconds, which exceeds the 5-minute threshold."
+          runbook_url: "https://github.com/danieleschmidt/fast-vlm-ondevice-kit/blob/main/docs/runbooks/slow-conversion.md"
+      
+      - alert: HighInferenceLatency
+        expr: inference_latency_ms > 500
+        for: 2m
+        labels:
+          severity: warning
+          service: fastvm-inference
+        annotations:
+          summary: "High inference latency detected"
+          description: "Inference latency on {{ $labels.device }} for {{ $labels.model_variant }} is {{ $value }}ms, exceeding 500ms threshold."
+          runbook_url: "https://github.com/danieleschmidt/fast-vlm-ondevice-kit/blob/main/docs/runbooks/high-latency.md"
+      
+      - alert: ConversionMemoryExceeded
+        expr: converted_model_size_mb > 1000
+        for: 1m
+        labels:
+          severity: critical
+          service: fastvm-converter
+        annotations:
+          summary: "Converted model size exceeds memory limits"
+          description: "Converted {{ $labels.model_variant }} model size is {{ $value }}MB, exceeding 1GB mobile device limit."
+
+  - name: fastvm_error_alerts
+    rules:
+      # Error rate alerts
+      - alert: HighErrorRate
+        expr: rate(error_count[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          service: fastvm
+        annotations:
+          summary: "High error rate in FastVLM operations"
+          description: "Error rate for {{ $labels.operation }} is {{ $value }} errors per second over the last 5 minutes."
+          runbook_url: "https://github.com/danieleschmidt/fast-vlm-ondevice-kit/blob/main/docs/runbooks/high-error-rate.md"
+      
+      - alert: ConversionFailures
+        expr: rate(error_count{operation="model_conversion"}[10m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: fastvm-converter
+        annotations:
+          summary: "Model conversion failures detected"
+          description: "Model conversion failure rate is {{ $value }} failures per second over the last 10 minutes."
+      
+      - alert: InferenceFailures
+        expr: rate(error_count{operation="model_inference"}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          service: fastvm-inference
+        annotations:
+          summary: "Model inference failures detected"
+          description: "Model inference failure rate is {{ $value }} failures per second over the last 5 minutes."
+
+  - name: fastvm_resource_alerts
+    rules:
+      # System resource alerts
+      - alert: HighCPUUsage
+        expr: system_cpu_percent > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}% for the last 5 minutes."
+      
+      - alert: HighMemoryUsage
+        expr: system_memory_percent > 90
+        for: 2m
+        labels:
+          severity: critical
+          service: system
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value }}% for the last 2 minutes."
+          runbook_url: "https://github.com/danieleschmidt/fast-vlm-ondevice-kit/blob/main/docs/runbooks/high-memory.md"
+      
+      - alert: DiskSpaceLow
+        expr: system_disk_percent > 85
+        for: 10m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "Low disk space"
+          description: "Disk usage is {{ $value }}% for the last 10 minutes."
+      
+      - alert: InferenceMemoryLeak
+        expr: increase(inference_memory_mb[30m]) > 200
+        for: 30m
+        labels:
+          severity: warning
+          service: fastvm-inference
+        annotations:
+          summary: "Potential memory leak in inference"
+          description: "Inference memory usage increased by {{ $value }}MB in the last 30 minutes, indicating a potential memory leak."
+
+  - name: fastvm_quality_alerts
+    rules:
+      # Model quality alerts
+      - alert: LowInferenceAccuracy
+        expr: inference_accuracy < 0.65
+        for: 5m
+        labels:
+          severity: warning
+          service: fastvm-inference
+        annotations:
+          summary: "Low inference accuracy"
+          description: "Inference accuracy for {{ $labels.model_variant }} on {{ $labels.device }} is {{ $value }}, below 65% threshold."
+      
+      - alert: ModelQualityDegradation
+        expr: (inference_accuracy - inference_accuracy offset 1h) < -0.05
+        for: 10m
+        labels:
+          severity: critical
+          service: fastvm-inference
+        annotations:
+          summary: "Model quality degradation detected"
+          description: "Inference accuracy has decreased by {{ $value }} compared to 1 hour ago."
+
+  - name: fastvm_availability_alerts
+    rules:
+      # Service availability
+      - alert: FastVMServiceDown
+        expr: up{job=~"fastvm-.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: fastvm
+        annotations:
+          summary: "FastVLM service is down"
+          description: "FastVLM {{ $labels.job }} service has been down for more than 1 minute."
+          runbook_url: "https://github.com/danieleschmidt/fast-vlm-ondevice-kit/blob/main/docs/runbooks/service-down.md"
+      
+      - alert: ConverterQueueBacklog
+        expr: conversion_queue_size > 10
+        for: 15m
+        labels:
+          severity: warning
+          service: fastvm-converter
+        annotations:
+          summary: "High conversion queue backlog"
+          description: "Conversion queue has {{ $value }} pending jobs for more than 15 minutes."
+
+  - name: fastvm_performance_degradation
+    rules:
+      # Performance degradation detection
+      - alert: ConversionTimeIncreasing
+        expr: (rate(conversion_duration_seconds[1h]) - rate(conversion_duration_seconds[1h] offset 24h)) > 30
+        for: 30m
+        labels:
+          severity: warning
+          service: fastvm-converter
+        annotations:
+          summary: "Model conversion time increasing"
+          description: "Average conversion time has increased by {{ $value }} seconds compared to 24 hours ago."
+      
+      - alert: InferenceLatencyIncreasing
+        expr: (rate(inference_latency_ms[1h]) - rate(inference_latency_ms[1h] offset 6h)) > 50
+        for: 20m
+        labels:
+          severity: warning
+          service: fastvm-inference
+        annotations:
+          summary: "Inference latency increasing"
+          description: "Average inference latency has increased by {{ $value }}ms compared to 6 hours ago."
