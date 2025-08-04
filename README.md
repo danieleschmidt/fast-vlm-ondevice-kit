@@ -401,9 +401,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 @software{fast_vlm_ondevice_kit,
   title={Fast VLM On-Device Kit: Production-Ready Mobile Vision-Language Models},
-  author={Your Name},
+  author={Daniel Schmidt},
   year={2025},
-  url={https://github.com/yourusername/fast-vlm-ondevice-kit}
+  url={https://github.com/danieleschmidt/fast-vlm-ondevice-kit}
 }
 ```
 
