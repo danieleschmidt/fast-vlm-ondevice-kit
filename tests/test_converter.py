@@ -18,21 +18,27 @@ class TestFastVLMConverter:
         assert self.converter is not None
         assert self.converter.model_size_mb == 0
         
-    def test_load_pytorch_model_placeholder(self):
-        """Test model loading placeholder."""
-        # Placeholder test - will be implemented with actual model loading
+    def test_load_pytorch_model_demo(self):
+        """Test demo model loading."""
         result = self.converter.load_pytorch_model("dummy_path.pth")
-        assert result is None  # Placeholder returns None
+        assert result is not None
+        # Should create demo model when checkpoint doesn't exist
+        assert hasattr(result, 'forward')
         
-    def test_convert_to_coreml_placeholder(self):
-        """Test Core ML conversion placeholder."""
-        # Placeholder test - will be implemented with actual conversion
+    @pytest.mark.slow
+    def test_convert_to_coreml_demo(self):
+        """Test Core ML conversion with demo model."""
+        # Load demo model first
+        model = self.converter.load_pytorch_model("dummy_path.pth")
+        
+        # Convert to CoreML - will work with demo model
         result = self.converter.convert_to_coreml(
-            model=None,
-            quantization="int4",
+            model=model,
+            quantization="int4", 
             image_size=(336, 336)
         )
-        assert result is None  # Placeholder returns None
+        assert result is not None
+        assert self.converter.get_model_size_mb() > 0
         
     def test_get_model_size(self):
         """Test model size reporting."""
