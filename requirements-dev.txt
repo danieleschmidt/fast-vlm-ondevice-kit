@@ -27,7 +27,7 @@ executing==2.2.0
 factory-boy==3.3.3
 faker==37.4.2
 filelock==3.18.0
-flake8==6.1.0
+flake8==7.3.0
 freezegun==1.5.3
 id==1.5.0
 identify==2.6.12
@@ -72,9 +72,9 @@ psutil==7.0.0
 ptyprocess==0.7.0
 pure-eval==0.2.3
 py-cpuinfo==9.0.0
-pycodestyle==2.11.1
+pycodestyle==2.14.0
 pycparser==2.22
-pyflakes==3.1.0
+pyflakes==3.4.0
 pygments==2.19.2
 pyproject-api==1.9.1
 pyproject-hooks==1.2.0
