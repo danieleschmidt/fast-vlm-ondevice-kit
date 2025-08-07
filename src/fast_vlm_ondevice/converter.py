@@ -103,6 +103,8 @@ except ImportError as e:
 from .quantization import QuantizationConfig
 from .security import InputValidator, SecureFileHandler
 from .monitoring import PerformanceProfiler, MetricsCollector
+from .validation import ValidationConfig, ValidationLevel, create_validation_suite, safe_execute
+from .error_recovery import ErrorRecoveryManager, resilient, RecoveryStrategy
 
 logger = logging.getLogger(__name__)
 
@@ -136,23 +138,72 @@ class FastVLMModel(nn.Module):
 class FastVLMConverter:
     """Converts FastVLM PyTorch models to optimized Core ML format."""
     
-    def __init__(self):
+    def __init__(self, validation_level: ValidationLevel = ValidationLevel.BALANCED):
         """Initialize converter with default settings."""
         self.model_size_mb = 0
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.temp_dir = tempfile.mkdtemp()
         self.session_id = str(uuid.uuid4())
         
+        # Initialize validation and error recovery
+        self.validation_config = ValidationConfig(level=validation_level)
+        self.validation_suite = create_validation_suite(validation_level)
+        self.error_recovery = ErrorRecoveryManager()
+        
         # Initialize security components
-        self.input_validator = InputValidator()
+        self.input_validator = self.validation_suite["input_validator"]
         self.file_handler = SecureFileHandler(self.temp_dir)
         
         # Initialize monitoring
         self.metrics_collector = MetricsCollector()
         self.profiler = PerformanceProfiler(self.metrics_collector, f"converter-{self.session_id}")
         
+        # Register fallback methods
+        self._register_fallback_methods()
+        
+        # Start health monitoring
+        self._register_health_checks()
+        self.error_recovery.start_monitoring()
+        
+    def _register_fallback_methods(self):
+        """Register fallback methods for error recovery."""
+        # Fallback model creation if loading fails
+        self.error_recovery.register_fallback_method(
+            "load_pytorch_model",
+            self._create_demo_model,
+            quality_score=0.3  # Demo model is low quality
+        )
+        
+        # Fallback quantization methods
+        self.error_recovery.register_fallback_method(
+            "convert_to_coreml", 
+            self._convert_with_basic_settings,
+            quality_score=0.7
+        )
+    
+    def _register_health_checks(self):
+        """Register health checks for system components."""
+        # Check disk space
+        def check_disk_space():
+            import shutil
+            free_space = shutil.disk_usage(self.temp_dir).free / (1024**3)
+            return free_space > 0.5  # At least 500MB free
+        
+        # Check memory usage
+        def check_memory():
+            try:
+                import psutil
+                return psutil.virtual_memory().percent < 85
+            except ImportError:
+                return True
+        
+        self.error_recovery.register_health_check("disk_space", check_disk_space)
+        self.error_recovery.register_health_check("memory_usage", check_memory)
+
+    @resilient(method_name="load_pytorch_model", 
+              recovery_strategies=[RecoveryStrategy.RETRY, RecoveryStrategy.FALLBACK])
     def load_pytorch_model(self, checkpoint_path: str) -> torch.nn.Module:
-        """Load FastVLM model from PyTorch checkpoint.
+        """Load FastVLM model from PyTorch checkpoint with robust error handling.
         
         Args:
             checkpoint_path: Path to .pth file
@@ -163,26 +214,23 @@ class FastVLMConverter:
         with self.profiler.profile_inference():
             logger.info(f"Loading FastVLM model from {checkpoint_path}", extra={"session_id": self.session_id})
             
-            # Validate file path
+            # Comprehensive input validation
+            file_validation = self.validation_suite["model_integrity_checker"].validate_model_file(checkpoint_path)
+            if not file_validation.valid:
+                if file_validation.severity.name in ["CRITICAL", "ERROR"]:
+                    raise ValueError(f"Model file validation failed: {file_validation.message}")
+                else:
+                    logger.warning(f"Model validation warning: {file_validation.message}")
+            
+            # Validate file path security
             if not self.file_handler.validate_file_path(checkpoint_path):
                 raise ValueError(f"Invalid or unsafe file path: {checkpoint_path}")
             
-            # Validate model file
-            validation_result = self.input_validator.validate_model_file(checkpoint_path)
-            if not validation_result["valid"]:
-                raise ValueError(f"Model validation failed: {validation_result['errors']}")
-            
-            if validation_result["warnings"]:
-                for warning in validation_result["warnings"]:
-                    logger.warning(f"Model validation warning: {warning}")
-            
             if not os.path.exists(checkpoint_path):
-                # For demo purposes, create a simplified FastVLM-like model
-                logger.warning(f"Checkpoint not found at {checkpoint_path}, creating demo model")
-                return self._create_demo_model()
+                raise FileNotFoundError(f"Checkpoint not found at {checkpoint_path}")
                 
-            try:
-                # Load real checkpoint with security measures
+            # Load checkpoint with enhanced error handling
+            def load_checkpoint():
                 checkpoint = torch.load(checkpoint_path, map_location=self.device, weights_only=True)
                 
                 # Extract model components
@@ -195,16 +243,23 @@ class FastVLMConverter:
                 model = self._build_fastvlm_from_checkpoint(model_state)
                 model.eval()
                 
-                logger.info(f"Successfully loaded FastVLM model", extra={
-                    "session_id": self.session_id,
-                    "model_size_mb": validation_result["file_info"]["size_mb"]
-                })
                 return model
-                
-            except Exception as e:
-                logger.error(f"Error loading checkpoint: {e}", extra={"session_id": self.session_id})
-                logger.info("Falling back to demo model")
-                return self._create_demo_model()
+            
+            # Execute with comprehensive validation
+            model, validation_results = safe_execute(
+                load_checkpoint, 
+                validation_config=self.validation_config
+            )
+            
+            if model is None:
+                error_messages = [vr.message for vr in validation_results if not vr.valid]
+                raise RuntimeError(f"Model loading failed: {'; '.join(error_messages)}")
+            
+            logger.info(f"Successfully loaded FastVLM model", extra={
+                "session_id": self.session_id,
+                "validation_results": len(validation_results)
+            })
+            return model
     
     def _create_demo_model(self) -> torch.nn.Module:
         """Create a demo FastVLM model for testing."""
@@ -278,7 +333,67 @@ class FastVLMConverter:
         # This would implement the actual FastVLM architecture
         # For now, return demo model
         return self._create_demo_model()
+    
+    def _convert_with_basic_settings(self, 
+                                   model: torch.nn.Module,
+                                   quantization: str = "fp16",
+                                   compute_units: str = "CPU_ONLY",
+                                   image_size: Tuple[int, int] = (224, 224),
+                                   max_seq_length: int = 50) -> ct.models.MLModel:
+        """Fallback conversion method with basic settings for reliability."""
+        logger.info("Using fallback conversion with basic settings")
         
+        try:
+            # Simplified conversion process
+            model.eval()
+            
+            # Smaller input sizes for reliability
+            example_image = torch.randn(1, 3, image_size[0], image_size[1])
+            example_input_ids = torch.randint(0, 30522, (1, max_seq_length))
+            example_attention_mask = torch.ones(1, max_seq_length)
+            
+            # Basic tracing without optimizations
+            with torch.no_grad():
+                traced_model = torch.jit.trace(
+                    model, 
+                    (example_image, example_input_ids, example_attention_mask)
+                )
+            
+            # Conservative Core ML conversion
+            coreml_model = ct.convert(
+                traced_model,
+                inputs=[
+                    ct.ImageType(
+                        name="image",
+                        shape=example_image.shape,
+                        scale=1.0/255.0
+                    ),
+                    ct.TensorType(
+                        name="input_ids", 
+                        shape=example_input_ids.shape,
+                        dtype=np.int32
+                    ),
+                    ct.TensorType(
+                        name="attention_mask",
+                        shape=example_attention_mask.shape, 
+                        dtype=np.int32
+                    )
+                ],
+                outputs=[
+                    ct.TensorType(name="answer_logits")
+                ],
+                compute_units=getattr(ct.ComputeUnit, compute_units, ct.ComputeUnit.CPU_ONLY),
+                minimum_deployment_target=ct.target.iOS17
+            )
+            
+            return coreml_model
+            
+        except Exception as e:
+            logger.error(f"Fallback conversion failed: {e}")
+            raise RuntimeError(f"All conversion methods failed: {e}")
+        
+    @resilient(method_name="convert_to_coreml",
+              recovery_strategies=[RecoveryStrategy.RETRY, RecoveryStrategy.FALLBACK])
     def convert_to_coreml(
         self,
         model: torch.nn.Module,
