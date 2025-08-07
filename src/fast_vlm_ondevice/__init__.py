@@ -19,6 +19,9 @@ from .logging_config import setup_logging, get_logger
 from .caching import CacheManager, ModelCache, InferenceCache, create_cache_manager
 from .optimization import PerformanceOptimizer, OptimizationConfig, create_optimizer
 from .deployment import ModelServer, DeploymentConfig, create_deployment
+from .neuromorphic import NeuromorphicFastVLM, SpikeConfig, SpikingNeuron, SpikingNetwork, create_neuromorphic_config
+from .research import ExperimentRunner, ExperimentConfig, ResearchExperimentType, create_research_experiment, run_comprehensive_research_suite
+from .model_manager import ModelManager, ModelMetadata, ModelFormat, DeploymentTarget, create_advanced_model_manager
 
 __all__ = [
     # Core functionality
@@ -62,5 +65,26 @@ __all__ = [
     # Deployment
     "ModelServer",
     "DeploymentConfig",
-    "create_deployment"
+    "create_deployment",
+    
+    # Neuromorphic computing
+    "NeuromorphicFastVLM",
+    "SpikeConfig", 
+    "SpikingNeuron",
+    "SpikingNetwork",
+    "create_neuromorphic_config",
+    
+    # Research framework
+    "ExperimentRunner",
+    "ExperimentConfig",
+    "ResearchExperimentType",
+    "create_research_experiment",
+    "run_comprehensive_research_suite",
+    
+    # Advanced model management
+    "ModelManager",
+    "ModelMetadata",
+    "ModelFormat",
+    "DeploymentTarget",
+    "create_advanced_model_manager"
 ]
