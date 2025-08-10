@@ -23,16 +23,27 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
-import yaml
+try:
+    import yaml
+except ImportError:
+    yaml = None
 import tempfile
 import zipfile
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from fast_vlm_ondevice.intelligent_orchestrator import IntelligentOrchestrator, OrchestratorConfig
-from fast_vlm_ondevice.mobile_optimizer import MobileOptimizationConfig, OptimizationLevel
-from fast_vlm_ondevice.reliability_engine import ReliabilityEngine
+try:
+    from fast_vlm_ondevice.autonomous_intelligence import create_autonomous_intelligence
+    from fast_vlm_ondevice.quantum_optimization import create_quantum_optimizer
+    from fast_vlm_ondevice.edge_computing_orchestrator import create_edge_orchestrator
+    from fast_vlm_ondevice.advanced_security_framework import create_security_framework
+    from fast_vlm_ondevice.production_reliability_engine import create_reliability_engine
+    from fast_vlm_ondevice.hyper_performance_engine import create_hyper_performance_engine
+    AUTONOMOUS_SYSTEMS_AVAILABLE = True
+except ImportError as e:
+    print(f"WARNING: Autonomous systems not available: {e}")
+    AUTONOMOUS_SYSTEMS_AVAILABLE = False
 
 # Configure logging
 logging.basicConfig(
@@ -101,11 +112,11 @@ class DeploymentConfig:
     cpu_target_utilization: float = 0.70
     
     # Mobile-specific settings
-    mobile_optimization: MobileOptimizationConfig = field(default_factory=lambda: MobileOptimizationConfig(
-        optimization_level=OptimizationLevel.BALANCED,
-        target_latency_ms=250.0,
-        enable_battery_optimization=True
-    ))
+    mobile_optimization: Dict[str, Any] = field(default_factory=lambda: {
+        "optimization_level": "BALANCED",
+        "target_latency_ms": 250.0,
+        "enable_battery_optimization": True
+    })
 
 
 @dataclass
@@ -340,9 +351,9 @@ class ServiceConfigurationManager:
             "enable_intelligent_caching": True,
             "enable_health_monitoring": True,
             "mobile_optimization": {
-                "optimization_level": self.config.mobile_optimization.optimization_level.value,
-                "target_latency_ms": self.config.mobile_optimization.target_latency_ms,
-                "enable_battery_optimization": self.config.mobile_optimization.enable_battery_optimization,
+                "optimization_level": self.config.mobile_optimization["optimization_level"],
+                "target_latency_ms": self.config.mobile_optimization["target_latency_ms"],
+                "enable_battery_optimization": self.config.mobile_optimization["enable_battery_optimization"],
                 "enable_adaptive_performance": True
             }
         }
