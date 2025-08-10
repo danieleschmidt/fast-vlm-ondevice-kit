@@ -22,6 +22,12 @@ from .deployment import ModelServer, DeploymentConfig, create_deployment
 from .neuromorphic import NeuromorphicFastVLM, SpikeConfig, SpikingNeuron, SpikingNetwork, create_neuromorphic_config
 from .research import ExperimentRunner, ExperimentConfig, ResearchExperimentType, create_research_experiment, run_comprehensive_research_suite
 from .model_manager import ModelManager, ModelMetadata, ModelFormat, DeploymentTarget, create_advanced_model_manager
+from .autonomous_intelligence import AutonomousIntelligenceEngine, PatternRecognitionEngine, AutonomousDecisionEngine, create_autonomous_intelligence
+from .quantum_optimization import QuantumOptimizationEngine, QuantumAnnealer, VariationalQuantumOptimizer, create_quantum_optimizer
+from .edge_computing_orchestrator import EdgeComputingOrchestrator, IntelligentLoadBalancer, EdgeAutoScaler, create_edge_orchestrator
+from .advanced_security_framework import AdvancedSecurityFramework, CryptographicManager, ThreatDetectionEngine, create_security_framework
+from .production_reliability_engine import ProductionReliabilityEngine, CircuitBreaker, Bulkhead, SelfHealingManager, create_reliability_engine
+from .hyper_performance_engine import HyperPerformanceEngine, HyperCache, JITCompiler, GPUAccelerator, create_hyper_performance_engine
 
 __all__ = [
     # Core functionality
@@ -86,5 +92,43 @@ __all__ = [
     "ModelMetadata",
     "ModelFormat",
     "DeploymentTarget",
-    "create_advanced_model_manager"
+    "create_advanced_model_manager",
+    
+    # Autonomous Intelligence
+    "AutonomousIntelligenceEngine",
+    "PatternRecognitionEngine", 
+    "AutonomousDecisionEngine",
+    "create_autonomous_intelligence",
+    
+    # Quantum Optimization
+    "QuantumOptimizationEngine",
+    "QuantumAnnealer",
+    "VariationalQuantumOptimizer",
+    "create_quantum_optimizer",
+    
+    # Edge Computing
+    "EdgeComputingOrchestrator",
+    "IntelligentLoadBalancer",
+    "EdgeAutoScaler", 
+    "create_edge_orchestrator",
+    
+    # Advanced Security
+    "AdvancedSecurityFramework",
+    "CryptographicManager",
+    "ThreatDetectionEngine",
+    "create_security_framework",
+    
+    # Production Reliability
+    "ProductionReliabilityEngine",
+    "CircuitBreaker",
+    "Bulkhead",
+    "SelfHealingManager",
+    "create_reliability_engine",
+    
+    # Hyper Performance
+    "HyperPerformanceEngine",
+    "HyperCache",
+    "JITCompiler",
+    "GPUAccelerator",
+    "create_hyper_performance_engine"
 ]
