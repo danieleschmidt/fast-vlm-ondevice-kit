@@ -57,7 +57,7 @@ mdit-py-plugins==0.4.2
 mdurl==0.1.2
 memory-profiler==0.61.0
 more-itertools==10.7.0
-mypy==1.17.0
+mypy==1.17.1
 mypy-extensions==1.1.0
 myst-parser==3.0.1
 nh3==0.3.0
