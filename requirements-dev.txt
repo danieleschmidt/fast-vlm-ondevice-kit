@@ -118,7 +118,7 @@ sphinxcontrib-serializinghtml==2.0.0
 stack-data==0.6.3
 stevedore==5.4.1
 tomli==2.2.1
-tox==4.28.3
+tox==4.28.4
 traitlets==5.14.3
 twine==6.1.0
 typer==0.16.0
