@@ -1,0 +1,43 @@
+{
+  "timestamp": "2025-08-12 20:34:04",
+  "overall_score": 37,
+  "max_score": 50,
+  "overall_percentage": 74.0,
+  "status": "CONDITIONAL",
+  "gate_results": {
+    "functional_testing": {
+      "score": 8,
+      "max_score": 10,
+      "percentage": 80.0
+    },
+    "security_validation": {
+      "score": 8,
+      "max_score": 10,
+      "percentage": 80.0
+    },
+    "performance_scalability": {
+      "score": 10,
+      "max_score": 10,
+      "percentage": 100.0
+    },
+    "architecture_quality": {
+      "score": 8,
+      "max_score": 8,
+      "percentage": 100.0
+    },
+    "production_readiness": {
+      "score": 3,
+      "max_score": 12,
+      "percentage": 25.0
+    }
+  },
+  "recommendations": [
+    "Enhance production readiness features"
+  ],
+  "next_steps": [
+    "Address identified quality gaps",
+    "Re-run quality gates",
+    "Conduct additional testing",
+    "Review architecture decisions"
+  ]
+}

@@ -1,12 +1,12 @@
 """
-Error Recovery and Resilience Framework for FastVLM On-Device Kit.
+Advanced error recovery and fault tolerance for FastVLM.
 
-Provides automatic error recovery, graceful degradation, circuit breakers,
-and self-healing capabilities for production robustness.
+Implements circuit breakers, retry logic, graceful degradation,
+and self-healing capabilities for production resilience.
 """
 
-import logging
 import time
+import logging
 import threading
 import functools
 from typing import Dict, Any, Optional, List, Tuple, Callable, Union
