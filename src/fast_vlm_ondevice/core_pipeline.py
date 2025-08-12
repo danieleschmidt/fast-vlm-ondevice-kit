@@ -1,450 +1,417 @@
 """
-Core pipeline for FastVLM on-device processing.
+Core pipeline implementation for FastVLM inference without external dependencies.
 
-Implements the main processing pipeline with error recovery, 
-monitoring, and optimization for mobile deployment.
+This module provides a lightweight implementation that demonstrates the architecture
+and can run without PyTorch, CoreML, or other heavy dependencies.
 """
 
-import asyncio
-import logging
-import time
-from typing import Dict, Any, Optional, List, Union, Tuple
-from dataclasses import dataclass, field
-from pathlib import Path
 import json
-import uuid
-from contextlib import contextmanager
-from enum import Enum
+import time
+import logging
+from typing import Dict, Any, Optional, List, Tuple
+from pathlib import Path
+from dataclasses import dataclass, asdict
+import base64
 
 logger = logging.getLogger(__name__)
 
 
-class PipelineStage(Enum):
-    """Pipeline processing stages."""
-    INITIALIZATION = "initialization"
-    IMAGE_PREPROCESSING = "image_preprocessing" 
-    TEXT_PREPROCESSING = "text_preprocessing"
-    VISION_ENCODING = "vision_encoding"
-    TEXT_ENCODING = "text_encoding"
-    MULTIMODAL_FUSION = "multimodal_fusion"
-    ANSWER_GENERATION = "answer_generation"
-    POSTPROCESSING = "postprocessing"
-    COMPLETE = "complete"
-
-
 @dataclass
-class PipelineMetrics:
-    """Metrics for pipeline execution."""
-    session_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    start_time: float = field(default_factory=time.time)
-    end_time: Optional[float] = None
-    total_latency_ms: Optional[float] = None
-    stage_timings: Dict[str, float] = field(default_factory=dict)
-    memory_usage_mb: Optional[float] = None
-    peak_memory_mb: Optional[float] = None
-    error_count: int = 0
-    warnings_count: int = 0
-    success: bool = False
-    
-    def complete_pipeline(self):
-        """Mark pipeline as complete and calculate metrics."""
-        self.end_time = time.time()
-        self.total_latency_ms = (self.end_time - self.start_time) * 1000
-        self.success = True
-    
-    def add_stage_timing(self, stage: PipelineStage, duration_ms: float):
-        """Add timing for a specific stage."""
-        self.stage_timings[stage.value] = duration_ms
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert metrics to dictionary."""
-        return {
-            "session_id": self.session_id,
-            "total_latency_ms": self.total_latency_ms,
-            "stage_timings": self.stage_timings,
-            "memory_usage_mb": self.memory_usage_mb,
-            "peak_memory_mb": self.peak_memory_mb,
-            "error_count": self.error_count,
-            "warnings_count": self.warnings_count,
-            "success": self.success
-        }
-
-
-@dataclass
-class PipelineConfig:
-    """Configuration for the FastVLM pipeline."""
-    model_path: str
-    image_size: Tuple[int, int] = (336, 336)
+class InferenceConfig:
+    """Configuration for VLM inference."""
+    model_name: str = "fast-vlm-base"
     max_sequence_length: int = 77
-    temperature: float = 0.7
-    top_k: int = 50
-    max_new_tokens: int = 100
-    batch_size: int = 1
-    
-    # Performance settings
+    image_size: Tuple[int, int] = (336, 336)
+    quantization_bits: int = 4
     enable_caching: bool = True
-    cache_size_mb: int = 100
-    enable_prefetch: bool = True
-    parallel_processing: bool = True
-    
-    # Quality settings
-    confidence_threshold: float = 0.5
-    enable_safety_checks: bool = True
-    enable_profiling: bool = False
-    
-    # Mobile optimization
-    target_latency_ms: float = 250.0
-    memory_limit_mb: float = 1500.0
-    energy_efficient: bool = True
+    timeout_seconds: float = 30.0
+    batch_size: int = 1
 
 
-class FastVLMPipeline:
-    """Main FastVLM processing pipeline optimized for mobile devices."""
+@dataclass
+class InferenceResult:
+    """Result from VLM inference."""
+    answer: str
+    confidence: float
+    latency_ms: float
+    model_used: str
+    timestamp: str
+    metadata: Dict[str, Any]
+
+
+class MockVisionEncoder:
+    """Mock vision encoder for demonstration purposes."""
     
-    def __init__(self, config: PipelineConfig):
-        """Initialize the FastVLM pipeline."""
-        self.config = config
-        self.metrics = PipelineMetrics()
-        self.is_initialized = False
-        self.cache = {}
-        self._model = None
-        self._tokenizer = None
-        self._preprocessor = None
-        
-        # Initialize logging
-        self.logger = logging.getLogger(f"{__name__}.{self.metrics.session_id[:8]}")
-        
-        # Initialize components
-        self._setup_pipeline()
+    def __init__(self, model_size: str = "base"):
+        self.model_size = model_size
+        self.feature_dim = {"tiny": 256, "base": 512, "large": 768}[model_size]
+        logger.info(f"Initialized MockVisionEncoder ({model_size}, {self.feature_dim}d)")
     
-    def _setup_pipeline(self):
-        """Set up pipeline components."""
-        self.logger.info(f"Initializing FastVLM pipeline (session: {self.metrics.session_id[:8]})")
+    def encode_image(self, image_data: bytes) -> Dict[str, Any]:
+        """Encode image to feature representation."""
+        # Simulate image encoding with deterministic features
+        import hashlib
+        image_hash = hashlib.md5(image_data).hexdigest()
         
-        try:
-            # Initialize model components (placeholder for actual implementation)
-            self._initialize_model()
-            self._initialize_preprocessors()
-            self._initialize_cache()
-            
-            self.is_initialized = True
-            self.logger.info("Pipeline initialization complete")
-            
-        except Exception as e:
-            self.logger.error(f"Pipeline initialization failed: {e}")
-            self.metrics.error_count += 1
-            raise
-    
-    def _initialize_model(self):
-        """Initialize the Core ML model."""
-        self.logger.info(f"Loading model from {self.config.model_path}")
-        
-        # Simulate model loading with error handling
-        try:
-            if not Path(self.config.model_path).exists():
-                self.logger.warning(f"Model path does not exist: {self.config.model_path}")
-                self.logger.info("Using demo/fallback model")
-                self._model = {"type": "demo", "name": "FastVLM-Demo"}
-            else:
-                self._model = {"type": "coreml", "path": self.config.model_path}
-                
-        except Exception as e:
-            self.logger.error(f"Model loading failed: {e}")
-            self.metrics.error_count += 1
-            # Fallback to demo model
-            self._model = {"type": "demo", "name": "FastVLM-Demo"}
-            self.metrics.warnings_count += 1
-    
-    def _initialize_preprocessors(self):
-        """Initialize image and text preprocessors."""
-        self.logger.info("Initializing preprocessors")
-        
-        # Image preprocessing setup
-        self._preprocessor = {
-            "image": {
-                "target_size": self.config.image_size,
-                "normalize_mean": [0.485, 0.456, 0.406],
-                "normalize_std": [0.229, 0.224, 0.225]
-            },
-            "text": {
-                "max_length": self.config.max_sequence_length,
-                "padding": True,
-                "truncation": True
-            }
-        }
-        
-        # Initialize tokenizer (placeholder)
-        self._tokenizer = {"vocab_size": 50000, "type": "clip"}
-    
-    def _initialize_cache(self):
-        """Initialize caching system."""
-        if self.config.enable_caching:
-            self.logger.info(f"Initializing cache (size: {self.config.cache_size_mb}MB)")
-            self.cache = {
-                "vision_features": {},
-                "text_embeddings": {},
-                "fusion_cache": {},
-                "max_size": self.config.cache_size_mb * 1024 * 1024  # Convert to bytes
-            }
-    
-    @contextmanager
-    def _stage_timer(self, stage: PipelineStage):
-        """Context manager for timing pipeline stages."""
-        start_time = time.time()
-        self.logger.debug(f"Starting stage: {stage.value}")
-        
-        try:
-            yield
-        finally:
-            duration_ms = (time.time() - start_time) * 1000
-            self.metrics.add_stage_timing(stage, duration_ms)
-            self.logger.debug(f"Completed stage {stage.value} in {duration_ms:.1f}ms")
-    
-    async def process(self, image_data: Any, question: str) -> Dict[str, Any]:
-        """
-        Process an image-question pair through the FastVLM pipeline.
-        
-        Args:
-            image_data: Input image (PIL Image, numpy array, or path)
-            question: Text question about the image
-            
-        Returns:
-            Dictionary containing answer and processing metadata
-        """
-        if not self.is_initialized:
-            raise RuntimeError("Pipeline not initialized")
-        
-        self.logger.info(f"Processing query: '{question[:50]}...'")
-        result = {
-            "answer": "",
-            "confidence": 0.0,
-            "processing_time_ms": 0.0,
-            "session_id": self.metrics.session_id,
-            "error": None
-        }
-        
-        try:
-            # Stage 1: Image Preprocessing
-            with self._stage_timer(PipelineStage.IMAGE_PREPROCESSING):
-                image_features = await self._preprocess_image(image_data)
-            
-            # Stage 2: Text Preprocessing  
-            with self._stage_timer(PipelineStage.TEXT_PREPROCESSING):
-                text_tokens = await self._preprocess_text(question)
-            
-            # Stage 3: Vision Encoding
-            with self._stage_timer(PipelineStage.VISION_ENCODING):
-                vision_embeddings = await self._encode_vision(image_features)
-            
-            # Stage 4: Text Encoding
-            with self._stage_timer(PipelineStage.TEXT_ENCODING):
-                text_embeddings = await self._encode_text(text_tokens)
-            
-            # Stage 5: Multimodal Fusion
-            with self._stage_timer(PipelineStage.MULTIMODAL_FUSION):
-                fused_features = await self._fuse_modalities(vision_embeddings, text_embeddings)
-            
-            # Stage 6: Answer Generation
-            with self._stage_timer(PipelineStage.ANSWER_GENERATION):
-                answer_result = await self._generate_answer(fused_features, question)
-            
-            # Stage 7: Postprocessing
-            with self._stage_timer(PipelineStage.POSTPROCESSING):
-                final_result = await self._postprocess_answer(answer_result)
-            
-            result.update(final_result)
-            self.metrics.complete_pipeline()
-            
-            self.logger.info(f"Processing complete - Answer: '{result['answer'][:50]}...'")
-            self.logger.info(f"Total latency: {self.metrics.total_latency_ms:.1f}ms")
-            
-        except Exception as e:
-            self.logger.error(f"Pipeline processing failed: {e}")
-            self.metrics.error_count += 1
-            result["error"] = str(e)
-            result["answer"] = "I'm sorry, I encountered an error processing your request."
-        
-        result["metrics"] = self.metrics.to_dict()
-        return result
-    
-    async def _preprocess_image(self, image_data: Any) -> Dict[str, Any]:
-        """Preprocess input image for vision encoder."""
-        self.logger.debug("Preprocessing image")
-        
-        # Simulate image preprocessing
-        await asyncio.sleep(0.005)  # 5ms processing time
-        
-        return {
-            "tensor_shape": [1, 3] + list(self.config.image_size),
-            "data_type": "float32",
-            "preprocessing_applied": ["resize", "normalize", "to_tensor"]
-        }
-    
-    async def _preprocess_text(self, question: str) -> Dict[str, Any]:
-        """Preprocess input text for text encoder."""
-        self.logger.debug(f"Preprocessing text: '{question[:30]}...'")
-        
-        # Simulate tokenization
-        await asyncio.sleep(0.002)  # 2ms processing time
-        
-        # Simple word-based tokenization simulation
-        tokens = question.lower().split()
-        token_ids = [hash(token) % 50000 for token in tokens]
-        
-        return {
-            "token_ids": token_ids[:self.config.max_sequence_length],
-            "attention_mask": [1] * min(len(token_ids), self.config.max_sequence_length),
-            "sequence_length": len(tokens)
-        }
-    
-    async def _encode_vision(self, image_features: Dict[str, Any]) -> Dict[str, Any]:
-        """Encode image features using vision encoder."""
-        self.logger.debug("Encoding vision features")
-        
-        # Check cache first
-        cache_key = f"vision_{hash(str(image_features))}"
-        if self.config.enable_caching and cache_key in self.cache.get("vision_features", {}):
-            self.logger.debug("Using cached vision features")
-            return self.cache["vision_features"][cache_key]
-        
-        # Simulate vision encoding
-        await asyncio.sleep(0.050)  # 50ms processing time
-        
-        vision_embeddings = {
-            "embeddings": [0.1] * 768,  # Simulated embeddings
-            "spatial_features": {"height": 24, "width": 24, "channels": 768},
-            "global_features": {"dimension": 768}
-        }
-        
-        # Cache results
-        if self.config.enable_caching:
-            self.cache["vision_features"][cache_key] = vision_embeddings
-        
-        return vision_embeddings
-    
-    async def _encode_text(self, text_tokens: Dict[str, Any]) -> Dict[str, Any]:
-        """Encode text tokens using text encoder."""
-        self.logger.debug("Encoding text features")
-        
-        # Check cache first
-        cache_key = f"text_{hash(str(text_tokens['token_ids']))}"
-        if self.config.enable_caching and cache_key in self.cache.get("text_embeddings", {}):
-            self.logger.debug("Using cached text embeddings")
-            return self.cache["text_embeddings"][cache_key]
-        
-        # Simulate text encoding
-        await asyncio.sleep(0.020)  # 20ms processing time
-        
-        text_embeddings = {
-            "embeddings": [0.05] * 512,  # Simulated embeddings
-            "sequence_embeddings": [[0.05] * 512] * text_tokens["sequence_length"],
-            "pooled_features": {"dimension": 512}
-        }
-        
-        # Cache results
-        if self.config.enable_caching:
-            self.cache["text_embeddings"][cache_key] = text_embeddings
-        
-        return text_embeddings
-    
-    async def _fuse_modalities(self, vision_embeddings: Dict[str, Any], text_embeddings: Dict[str, Any]) -> Dict[str, Any]:
-        """Fuse vision and text modalities using cross-attention."""
-        self.logger.debug("Performing multimodal fusion")
-        
-        # Simulate cross-modal attention
-        await asyncio.sleep(0.080)  # 80ms processing time
-        
-        fused_features = {
-            "cross_attention_features": [0.03] * 1024,
-            "vision_weight": 0.6,
-            "text_weight": 0.4,
-            "fusion_confidence": 0.85
-        }
-        
-        return fused_features
-    
-    async def _generate_answer(self, fused_features: Dict[str, Any], question: str) -> Dict[str, Any]:
-        """Generate answer using the decoder."""
-        self.logger.debug("Generating answer")
-        
-        # Simulate answer generation
-        await asyncio.sleep(0.090)  # 90ms processing time
-        
-        # Simple answer generation simulation
-        sample_answers = [
-            "I can see a person in the image.",
-            "There are several objects including a car and a building.",
-            "The image shows a beautiful landscape with mountains.",
-            "I can identify multiple items in this scene.",
-            "The image contains both indoor and outdoor elements."
+        # Generate mock features based on image hash (deterministic)
+        features = [
+            (int(image_hash[i:i+2], 16) / 255.0 - 0.5) * 2  # Normalize to [-1, 1]
+            for i in range(0, min(len(image_hash), self.feature_dim * 2), 2)
         ]
         
-        answer = sample_answers[hash(question) % len(sample_answers)]
+        # Pad or truncate to feature_dim
+        if len(features) < self.feature_dim:
+            features.extend([0.0] * (self.feature_dim - len(features)))
+        else:
+            features = features[:self.feature_dim]
         
         return {
-            "answer": answer,
-            "confidence": min(0.95, fused_features.get("fusion_confidence", 0.8) + 0.1),
-            "generation_steps": 15,
-            "alternative_answers": sample_answers[:3]
+            "features": features,
+            "spatial_features": [features[:64], features[64:128]] if len(features) >= 128 else [features],
+            "attention_mask": [1.0] * min(64, len(features)),
+            "image_hash": image_hash
         }
+
+
+class MockTextEncoder:
+    """Mock text encoder for demonstration purposes."""
     
-    async def _postprocess_answer(self, answer_result: Dict[str, Any]) -> Dict[str, Any]:
-        """Postprocess generated answer."""
-        self.logger.debug("Postprocessing answer")
+    def __init__(self, vocab_size: int = 50000):
+        self.vocab_size = vocab_size
+        self.embedding_dim = 512
+        logger.info(f"Initialized MockTextEncoder (vocab={vocab_size}, dim={self.embedding_dim})")
+    
+    def encode_text(self, text: str) -> Dict[str, Any]:
+        """Encode text to feature representation."""
+        # Simple tokenization simulation
+        tokens = text.lower().split()
         
-        # Simulate postprocessing
-        await asyncio.sleep(0.005)  # 5ms processing time
+        # Generate mock embeddings based on text content
+        text_features = []
+        for token in tokens[:20]:  # Max 20 tokens
+            token_hash = hash(token) % 1000
+            embedding = [(token_hash + i) / 1000.0 for i in range(self.embedding_dim)]
+            text_features.append(embedding)
         
-        # Apply safety checks and confidence filtering
-        if answer_result["confidence"] < self.config.confidence_threshold:
-            self.logger.warning(f"Low confidence answer: {answer_result['confidence']}")
-            self.metrics.warnings_count += 1
+        # Pad to fixed length
+        max_length = 20
+        while len(text_features) < max_length:
+            text_features.append([0.0] * self.embedding_dim)
         
         return {
-            "answer": answer_result["answer"].strip(),
-            "confidence": answer_result["confidence"],
-            "safe": True,  # Placeholder for safety check
-            "postprocessed": True
+            "token_embeddings": text_features[:max_length],
+            "attention_mask": [1.0] * min(len(tokens), max_length) + [0.0] * max(0, max_length - len(tokens)),
+            "sequence_length": min(len(tokens), max_length),
+            "original_text": text
         }
+
+
+class MockFusionModule:
+    """Mock cross-modal fusion module."""
     
-    def get_performance_metrics(self) -> Dict[str, Any]:
-        """Get detailed performance metrics."""
+    def __init__(self, vision_dim: int = 512, text_dim: int = 512):
+        self.vision_dim = vision_dim
+        self.text_dim = text_dim
+        self.fusion_dim = 768
+        logger.info(f"Initialized MockFusionModule (vision={vision_dim}, text={text_dim}, fusion={self.fusion_dim})")
+    
+    def fuse_modalities(self, vision_features: Dict[str, Any], text_features: Dict[str, Any]) -> Dict[str, Any]:
+        """Fuse vision and text features."""
+        # Simulate cross-attention fusion
+        v_features = vision_features["features"]
+        t_features = text_features["token_embeddings"][0]  # Use first token embedding
+        
+        # Simple fusion: concatenate and project
+        fused_features = []
+        for i in range(min(len(v_features), len(t_features))):
+            fused_val = (v_features[i] + t_features[i]) / 2.0
+            fused_features.append(fused_val)
+        
+        # Simulate attention scores
+        attention_scores = [abs(f) for f in fused_features[:10]]
+        
         return {
-            "pipeline_metrics": self.metrics.to_dict(),
-            "cache_stats": self._get_cache_stats(),
-            "model_info": {
-                "type": self._model.get("type", "unknown"),
-                "path": self._model.get("path", ""),
-                "initialized": self.is_initialized
-            },
-            "config": {
-                "image_size": self.config.image_size,
-                "max_sequence_length": self.config.max_sequence_length,
-                "target_latency_ms": self.config.target_latency_ms,
-                "memory_limit_mb": self.config.memory_limit_mb
+            "fused_features": fused_features,
+            "cross_attention": attention_scores,
+            "fusion_quality": sum(attention_scores) / len(attention_scores) if attention_scores else 0.0
+        }
+
+
+class MockAnswerGenerator:
+    """Mock answer generation module."""
+    
+    def __init__(self):
+        self.common_responses = {
+            "what": ["objects", "items", "things", "elements"],
+            "how": ["process", "method", "way", "approach"], 
+            "where": ["location", "place", "position", "area"],
+            "when": ["time", "moment", "period", "duration"],
+            "who": ["person", "people", "individual", "character"],
+            "why": ["reason", "cause", "purpose", "explanation"]
+        }
+        logger.info("Initialized MockAnswerGenerator")
+    
+    def generate_answer(self, fused_features: Dict[str, Any], question: str) -> str:
+        """Generate answer based on fused features and question."""
+        question_lower = question.lower()
+        
+        # Simple rule-based generation
+        if any(word in question_lower for word in ["what", "object", "thing"]):
+            confidence = fused_features.get("fusion_quality", 0.5)
+            if confidence > 0.7:
+                return "I can see several objects including furniture, decorative items, and possibly electronic devices in the image."
+            elif confidence > 0.4:
+                return "There appear to be some objects in the image, but I need better image quality for specific identification."
+            else:
+                return "I can detect some items but cannot clearly identify specific objects."
+        
+        elif any(word in question_lower for word in ["color", "colour"]):
+            return "The image contains various colors including what appears to be neutral tones with some accent colors."
+        
+        elif any(word in question_lower for word in ["person", "people", "human"]):
+            return "I can analyze the image for people, but I prioritize privacy and provide general descriptions only."
+        
+        elif any(word in question_lower for word in ["count", "how many", "number"]):
+            attention_scores = fused_features.get("cross_attention", [])
+            count = len([s for s in attention_scores if s > 0.5])
+            return f"Based on my analysis, I can identify approximately {count} distinct elements or regions of interest."
+        
+        elif any(word in question_lower for word in ["describe", "scene", "setting"]):
+            return "This appears to be an indoor scene with various objects and elements arranged in what looks like a lived-in space."
+        
+        else:
+            return "I can see various elements in the image. Could you ask a more specific question about what you'd like to know?"
+
+
+class FastVLMCorePipeline:
+    """Core FastVLM inference pipeline without external dependencies."""
+    
+    def __init__(self, config: Optional[InferenceConfig] = None):
+        """Initialize the core pipeline."""
+        self.config = config or InferenceConfig()
+        
+        # Initialize mock components
+        model_size = self._determine_model_size()
+        self.vision_encoder = MockVisionEncoder(model_size)
+        self.text_encoder = MockTextEncoder()
+        self.fusion_module = MockFusionModule()
+        self.answer_generator = MockAnswerGenerator()
+        
+        # Simple cache
+        self.cache = {} if self.config.enable_caching else None
+        
+        logger.info(f"Initialized FastVLMCorePipeline with {self.config.model_name}")
+    
+    def _determine_model_size(self) -> str:
+        """Determine model size from config."""
+        if "tiny" in self.config.model_name:
+            return "tiny"
+        elif "large" in self.config.model_name:
+            return "large"
+        else:
+            return "base"
+    
+    def _generate_cache_key(self, image_data: bytes, question: str) -> str:
+        """Generate cache key for image-question pair."""
+        import hashlib
+        combined = base64.b64encode(image_data).decode() + question
+        return hashlib.sha256(combined.encode()).hexdigest()[:16]
+    
+    def process_image_question(self, image_data: bytes, question: str) -> InferenceResult:
+        """Process image and question to generate answer."""
+        start_time = time.time()
+        
+        # Check cache first
+        cache_key = self._generate_cache_key(image_data, question) if self.cache is not None else None
+        if cache_key and cache_key in self.cache:
+            cached_result = self.cache[cache_key]
+            logger.info(f"Cache hit for key {cache_key}")
+            return InferenceResult(**cached_result)
+        
+        try:
+            # Step 1: Encode image
+            vision_features = self.vision_encoder.encode_image(image_data)
+            
+            # Step 2: Encode text
+            text_features = self.text_encoder.encode_text(question)
+            
+            # Step 3: Fuse modalities
+            fused_features = self.fusion_module.fuse_modalities(vision_features, text_features)
+            
+            # Step 4: Generate answer
+            answer = self.answer_generator.generate_answer(fused_features, question)
+            
+            # Calculate metrics
+            latency_ms = (time.time() - start_time) * 1000
+            confidence = fused_features.get("fusion_quality", 0.5)
+            
+            # Create result
+            result = InferenceResult(
+                answer=answer,
+                confidence=confidence,
+                latency_ms=latency_ms,
+                model_used=self.config.model_name,
+                timestamp=time.strftime("%Y-%m-%d %H:%M:%S"),
+                metadata={
+                    "vision_features_dim": len(vision_features["features"]),
+                    "text_tokens": text_features["sequence_length"],
+                    "fusion_dim": len(fused_features["fused_features"]),
+                    "image_hash": vision_features["image_hash"],
+                    "cache_used": False
+                }
+            )
+            
+            # Cache result
+            if cache_key and self.cache is not None:
+                self.cache[cache_key] = asdict(result)
+                logger.info(f"Cached result for key {cache_key}")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Pipeline processing failed: {e}")
+            return InferenceResult(
+                answer=f"Error processing request: {str(e)}",
+                confidence=0.0,
+                latency_ms=(time.time() - start_time) * 1000,
+                model_used=self.config.model_name,
+                timestamp=time.strftime("%Y-%m-%d %H:%M:%S"),
+                metadata={"error": str(e)}
+            )
+    
+    def process_text_only(self, question: str) -> InferenceResult:
+        """Process text-only question (no image)."""
+        start_time = time.time()
+        
+        try:
+            # Create dummy image data for consistency
+            dummy_image = b"dummy_image_data"
+            
+            # Use general knowledge responses
+            answer = self._generate_general_response(question)
+            
+            latency_ms = (time.time() - start_time) * 1000
+            
+            return InferenceResult(
+                answer=answer,
+                confidence=0.8,  # High confidence for general knowledge
+                latency_ms=latency_ms,
+                model_used=self.config.model_name,
+                timestamp=time.strftime("%Y-%m-%d %H:%M:%S"),
+                metadata={
+                    "mode": "text_only",
+                    "question_length": len(question),
+                    "response_type": "general_knowledge"
+                }
+            )
+            
+        except Exception as e:
+            logger.error(f"Text-only processing failed: {e}")
+            return InferenceResult(
+                answer=f"Error processing text question: {str(e)}",
+                confidence=0.0,
+                latency_ms=(time.time() - start_time) * 1000,
+                model_used=self.config.model_name,
+                timestamp=time.strftime("%Y-%m-%d %H:%M:%S"),
+                metadata={"error": str(e)}
+            )
+    
+    def _generate_general_response(self, question: str) -> str:
+        """Generate general knowledge response."""
+        question_lower = question.lower()
+        
+        if any(word in question_lower for word in ["hello", "hi", "greeting"]):
+            return "Hello! I'm FastVLM, a vision-language model. I can analyze images and answer questions about them."
+        
+        elif any(word in question_lower for word in ["help", "what can you do"]):
+            return "I can analyze images and answer questions about what I see, including objects, scenes, colors, and spatial relationships."
+        
+        elif any(word in question_lower for word in ["fastVLM", "fast vlm", "model"]):
+            return "FastVLM is an efficient vision-language model optimized for mobile devices, capable of <250ms inference on modern smartphones."
+        
+        else:
+            return "I'm designed to analyze images and answer questions about them. Please provide an image along with your question for the best results."
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """Get pipeline statistics."""
+        cache_size = len(self.cache) if self.cache else 0
+        
+        return {
+            "model_name": self.config.model_name,
+            "cache_enabled": self.config.enable_caching,
+            "cache_entries": cache_size,
+            "quantization_bits": self.config.quantization_bits,
+            "max_sequence_length": self.config.max_sequence_length,
+            "image_size": self.config.image_size,
+            "components": {
+                "vision_encoder": self.vision_encoder.model_size,
+                "text_encoder": f"{self.text_encoder.vocab_size} vocab",
+                "fusion_module": f"{self.fusion_module.fusion_dim}d",
+                "answer_generator": "rule_based"
             }
         }
     
-    def _get_cache_stats(self) -> Dict[str, Any]:
-        """Get cache utilization statistics."""
-        if not self.config.enable_caching:
-            return {"enabled": False}
-        
-        return {
-            "enabled": True,
-            "vision_cache_size": len(self.cache.get("vision_features", {})),
-            "text_cache_size": len(self.cache.get("text_embeddings", {})),
-            "fusion_cache_size": len(self.cache.get("fusion_cache", {})),
-            "max_size_mb": self.config.cache_size_mb
-        }
-    
-    def clear_cache(self):
-        """Clear all caches to free memory."""
-        self.logger.info("Clearing pipeline caches")
-        if hasattr(self, 'cache'):
+    def clear_cache(self) -> int:
+        """Clear inference cache and return number of entries cleared."""
+        if self.cache:
+            entries = len(self.cache)
             self.cache.clear()
+            logger.info(f"Cleared {entries} cache entries")
+            return entries
+        return 0
+
+
+# Convenience function for quick inference
+def quick_inference(image_data: bytes, question: str, model_name: str = "fast-vlm-base") -> Dict[str, Any]:
+    """Quick inference function for simple use cases."""
+    config = InferenceConfig(model_name=model_name)
+    pipeline = FastVLMCorePipeline(config)
+    result = pipeline.process_image_question(image_data, question)
+    return asdict(result)
+
+
+# Demo data generator
+def create_demo_image() -> bytes:
+    """Create demo image data for testing."""
+    # Generate deterministic "image" data
+    demo_data = "demo_image_" + "x" * 100  # Simulate image bytes
+    return demo_data.encode()
+
+
+if __name__ == "__main__":
+    # Demo usage
+    print("FastVLM Core Pipeline Demo")
+    print("=" * 30)
     
-    def __del__(self):
-        """Cleanup resources when pipeline is destroyed."""
-        if hasattr(self, 'logger'):
-            self.logger.info(f"Pipeline cleanup (session: {self.metrics.session_id[:8]})")
+    # Create pipeline
+    config = InferenceConfig(model_name="fast-vlm-base", enable_caching=True)
+    pipeline = FastVLMCorePipeline(config)
+    
+    # Demo image and questions
+    demo_image = create_demo_image()
+    demo_questions = [
+        "What objects are in this image?",
+        "What colors do you see?",
+        "Describe the scene",
+        "How many items are visible?"
+    ]
+    
+    print(f"\nProcessing {len(demo_questions)} questions...")
+    
+    for i, question in enumerate(demo_questions, 1):
+        print(f"\n{i}. Question: {question}")
+        result = pipeline.process_image_question(demo_image, question)
+        print(f"   Answer: {result.answer}")
+        print(f"   Confidence: {result.confidence:.2f}")
+        print(f"   Latency: {result.latency_ms:.1f}ms")
+    
+    # Show stats
+    print(f"\nPipeline Stats:")
+    stats = pipeline.get_stats()
+    for key, value in stats.items():
+        if isinstance(value, dict):
+            print(f"  {key}:")
+            for k, v in value.items():
+                print(f"    {k}: {v}")
+        else:
+            print(f"  {key}: {value}")
