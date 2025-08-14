@@ -21,6 +21,11 @@ try:
     CACHE_DEPS = True
 except ImportError:
     CACHE_DEPS = False
+    # Create fallback classes for missing dependencies
+    class np:
+        class ndarray: pass
+    class Image:
+        class Image: pass
 
 logger = logging.getLogger(__name__)
 

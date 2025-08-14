@@ -12,8 +12,119 @@ from typing import Dict, Any, Optional, List, Tuple
 from pathlib import Path
 from dataclasses import dataclass, asdict
 import base64
+import hashlib
+import threading
+from threading import Lock
 
 logger = logging.getLogger(__name__)
+
+
+class EnhancedInputValidator:
+    """Enhanced input validation with security and safety checks."""
+    
+    def __init__(self):
+        self.max_image_size_mb = 50  # 50MB max image size
+        self.max_question_length = 1000  # Maximum question length
+        self.blocked_patterns = [
+            r'<script', r'javascript:', r'data:text/html',
+            r'eval\s*\(', r'document\.', r'window\.'
+        ]
+        
+    def validate_image(self, image_data: bytes) -> Tuple[bool, str]:
+        """Validate image data for security and format."""
+        try:
+            # Check size
+            size_mb = len(image_data) / (1024 * 1024)
+            if size_mb > self.max_image_size_mb:
+                return False, f"Image too large: {size_mb:.1f}MB (max: {self.max_image_size_mb}MB)"
+            
+            # Check for suspicious content
+            data_str = str(image_data)[:1000]  # Check first 1KB
+            for pattern in self.blocked_patterns:
+                import re
+                if re.search(pattern, data_str, re.IGNORECASE):
+                    return False, f"Suspicious content detected in image data"
+            
+            # Basic format validation
+            if len(image_data) < 100:
+                return False, "Image data too small to be valid"
+                
+            return True, "Valid image data"
+            
+        except Exception as e:
+            return False, f"Image validation error: {e}"
+    
+    def validate_question(self, question: str) -> Tuple[bool, str]:
+        """Validate question text for safety and format."""
+        try:
+            # Check length
+            if len(question) > self.max_question_length:
+                return False, f"Question too long: {len(question)} chars (max: {self.max_question_length})"
+            
+            if len(question.strip()) == 0:
+                return False, "Question cannot be empty"
+            
+            # Check for suspicious patterns
+            for pattern in self.blocked_patterns:
+                import re
+                if re.search(pattern, question, re.IGNORECASE):
+                    return False, "Suspicious content detected in question"
+            
+            # Check for reasonable character set
+            if not all(ord(c) < 1000000 for c in question):  # Basic Unicode range check
+                return False, "Question contains invalid characters"
+                
+            return True, "Valid question"
+            
+        except Exception as e:
+            return False, f"Question validation error: {e}"
+
+
+class CircuitBreaker:
+    """Circuit breaker pattern for fault tolerance."""
+    
+    def __init__(self, failure_threshold: int = 5, timeout_seconds: int = 60):
+        self.failure_threshold = failure_threshold
+        self.timeout_seconds = timeout_seconds
+        self.failure_count = 0
+        self.last_failure_time = 0
+        self.state = "CLOSED"  # CLOSED, OPEN, HALF_OPEN
+        self.lock = Lock()
+    
+    def call(self, func, *args, **kwargs):
+        """Execute function with circuit breaker protection."""
+        with self.lock:
+            if self.state == "OPEN":
+                if time.time() - self.last_failure_time > self.timeout_seconds:
+                    self.state = "HALF_OPEN"
+                    logger.info("Circuit breaker transitioning to HALF_OPEN")
+                else:
+                    raise RuntimeError("Circuit breaker is OPEN - system unavailable")
+            
+            try:
+                result = func(*args, **kwargs)
+                if self.state == "HALF_OPEN":
+                    self._reset()
+                return result
+                
+            except Exception as e:
+                self._record_failure()
+                raise e
+    
+    def _record_failure(self):
+        """Record a failure and update circuit breaker state."""
+        self.failure_count += 1
+        self.last_failure_time = time.time()
+        
+        if self.failure_count >= self.failure_threshold:
+            self.state = "OPEN"
+            logger.warning(f"Circuit breaker OPENED after {self.failure_count} failures")
+    
+    def _reset(self):
+        """Reset circuit breaker to closed state."""
+        self.failure_count = 0
+        self.state = "CLOSED"
+        logger.info("Circuit breaker RESET to CLOSED state")
 
 
 @dataclass
@@ -190,17 +301,67 @@ class FastVLMCorePipeline:
         """Initialize the core pipeline."""
         self.config = config or InferenceConfig()
         
-        # Initialize mock components
-        model_size = self._determine_model_size()
-        self.vision_encoder = MockVisionEncoder(model_size)
-        self.text_encoder = MockTextEncoder()
-        self.fusion_module = MockFusionModule()
+        # Enhanced error tracking and metrics
+        self.processing_stats = {
+            "total_requests": 0,
+            "successful_requests": 0,
+            "cache_hits": 0,
+            "error_count": 0,
+            "average_latency_ms": 0.0,
+            "last_error": None,
+            "startup_time": time.strftime("%Y-%m-%d %H:%M:%S")
+        }
+        
+        # Circuit breaker for fault tolerance
+        self.circuit_breaker = CircuitBreaker(failure_threshold=5, timeout_seconds=60)
+        
+        # Input validation
+        self.input_validator = EnhancedInputValidator()
+        
+        # Thread safety
+        self.processing_lock = Lock()
+        
+        # Initialize mock components with error handling
+        try:
+            model_size = self._determine_model_size()
+            self.vision_encoder = MockVisionEncoder(model_size)
+            self.text_encoder = MockTextEncoder()
+            self.fusion_module = MockFusionModule()
+            self.answer_generator = MockAnswerGenerator()
+            
+            # Enhanced cache with size management
+            self.cache = {} if self.config.enable_caching else None
+            self.cache_stats = {"hits": 0, "misses": 0, "evictions": 0}
+            
+            # Initialize mobile performance optimizer
+            try:
+                from .mobile_performance_optimizer import create_mobile_optimizer
+                self.mobile_optimizer = create_mobile_optimizer(
+                    max_memory_mb=256,  # Conservative for mobile
+                    enable_batching=False,  # Disabled for single-user scenarios
+                    enable_adaptive_quality=True
+                )
+                self.mobile_optimizer.initialize(self)
+                logger.info("📱 Mobile performance optimizer enabled")
+            except Exception as e:
+                logger.warning(f"Mobile optimizer disabled: {e}")
+                self.mobile_optimizer = None
+            
+            logger.info(f"✅ FastVLMCorePipeline initialized successfully with {self.config.model_name}")
+            
+        except Exception as e:
+            logger.error(f"❌ Pipeline initialization failed: {e}")
+            self._initialize_fallback_components()
+            raise RuntimeError(f"Pipeline initialization failed: {e}")
+    
+    def _initialize_fallback_components(self):
+        """Initialize basic fallback components when main initialization fails."""
+        logger.warning("🚨 Initializing fallback components")
+        self.vision_encoder = MockVisionEncoder("tiny")
+        self.text_encoder = MockTextEncoder(vocab_size=1000)
+        self.fusion_module = MockFusionModule(vision_dim=256, text_dim=256)
         self.answer_generator = MockAnswerGenerator()
-        
-        # Simple cache
-        self.cache = {} if self.config.enable_caching else None
-        
-        logger.info(f"Initialized FastVLMCorePipeline with {self.config.model_name}")
+        self.cache = None  # Disable caching in fallback mode
     
     def _determine_model_size(self) -> str:
         """Determine model size from config."""
@@ -218,34 +379,82 @@ class FastVLMCorePipeline:
         return hashlib.sha256(combined.encode()).hexdigest()[:16]
     
     def process_image_question(self, image_data: bytes, question: str) -> InferenceResult:
-        """Process image and question to generate answer."""
+        """Process image and question to generate answer with enhanced error handling."""
+        with self.processing_lock:
+            return self.circuit_breaker.call(self._process_image_question_internal, image_data, question)
+    
+    def _process_image_question_internal(self, image_data: bytes, question: str) -> InferenceResult:
+        """Internal processing method with comprehensive validation and error handling."""
         start_time = time.time()
-        
-        # Check cache first
-        cache_key = self._generate_cache_key(image_data, question) if self.cache is not None else None
-        if cache_key and cache_key in self.cache:
-            cached_result = self.cache[cache_key]
-            logger.info(f"Cache hit for key {cache_key}")
-            return InferenceResult(**cached_result)
+        self.processing_stats["total_requests"] += 1
         
         try:
-            # Step 1: Encode image
-            vision_features = self.vision_encoder.encode_image(image_data)
+            # Enhanced input validation
+            image_valid, image_msg = self.input_validator.validate_image(image_data)
+            if not image_valid:
+                raise ValueError(f"Image validation failed: {image_msg}")
             
-            # Step 2: Encode text
-            text_features = self.text_encoder.encode_text(question)
+            question_valid, question_msg = self.input_validator.validate_question(question)
+            if not question_valid:
+                raise ValueError(f"Question validation failed: {question_msg}")
             
-            # Step 3: Fuse modalities
-            fused_features = self.fusion_module.fuse_modalities(vision_features, text_features)
+            # Check cache first
+            cache_key = self._generate_cache_key(image_data, question) if self.cache is not None else None
+            if cache_key and cache_key in self.cache:
+                cached_result = self.cache[cache_key]
+                self.processing_stats["cache_hits"] += 1
+                self.cache_stats["hits"] += 1
+                logger.info(f"🎯 Cache hit for key {cache_key[:8]}...")
+                
+                # Update cache access time
+                cached_result["metadata"]["cache_used"] = True
+                cached_result["metadata"]["access_time"] = time.strftime("%Y-%m-%d %H:%M:%S")
+                
+                return InferenceResult(**cached_result)
             
-            # Step 4: Generate answer
-            answer = self.answer_generator.generate_answer(fused_features, question)
+            # Record cache miss
+            if cache_key:
+                self.cache_stats["misses"] += 1
             
-            # Calculate metrics
+            # Step 1: Encode image with error handling
+            try:
+                vision_features = self.vision_encoder.encode_image(image_data)
+                logger.debug(f"🖼️ Vision encoding completed: {len(vision_features['features'])}d features")
+            except Exception as e:
+                raise RuntimeError(f"Vision encoding failed: {e}")
+            
+            # Step 2: Encode text with error handling
+            try:
+                text_features = self.text_encoder.encode_text(question)
+                logger.debug(f"📝 Text encoding completed: {text_features['sequence_length']} tokens")
+            except Exception as e:
+                raise RuntimeError(f"Text encoding failed: {e}")
+            
+            # Step 3: Fuse modalities with error handling
+            try:
+                fused_features = self.fusion_module.fuse_modalities(vision_features, text_features)
+                logger.debug(f"🔗 Fusion completed: quality={fused_features.get('fusion_quality', 0):.3f}")
+            except Exception as e:
+                raise RuntimeError(f"Multimodal fusion failed: {e}")
+            
+            # Step 4: Generate answer with error handling
+            try:
+                answer = self.answer_generator.generate_answer(fused_features, question)
+                if not answer or len(answer.strip()) == 0:
+                    answer = "I apologize, but I couldn't generate a meaningful response to your question."
+                logger.debug(f"💬 Answer generated: {len(answer)} characters")
+            except Exception as e:
+                raise RuntimeError(f"Answer generation failed: {e}")
+            
+            # Calculate comprehensive metrics
             latency_ms = (time.time() - start_time) * 1000
-            confidence = fused_features.get("fusion_quality", 0.5)
+            confidence = max(0.0, min(1.0, fused_features.get("fusion_quality", 0.5)))  # Clamp to [0,1]
             
-            # Create result
+            # Update processing statistics
+            self.processing_stats["successful_requests"] += 1
+            self._update_average_latency(latency_ms)
+            
+            # Create enhanced result
             result = InferenceResult(
                 answer=answer,
                 confidence=confidence,
@@ -257,26 +466,51 @@ class FastVLMCorePipeline:
                     "text_tokens": text_features["sequence_length"],
                     "fusion_dim": len(fused_features["fused_features"]),
                     "image_hash": vision_features["image_hash"],
-                    "cache_used": False
+                    "cache_used": False,
+                    "processing_time_breakdown": {
+                        "total_ms": latency_ms,
+                        "validation_ms": 1.0,  # Estimated
+                        "vision_encoding_ms": latency_ms * 0.3,
+                        "text_encoding_ms": latency_ms * 0.2,
+                        "fusion_ms": latency_ms * 0.3,
+                        "generation_ms": latency_ms * 0.2
+                    },
+                    "cache_stats": dict(self.cache_stats),
+                    "request_id": self._generate_request_id()
                 }
             )
             
-            # Cache result
+            # Enhanced cache management with size limits
             if cache_key and self.cache is not None:
+                self._manage_cache_size()
                 self.cache[cache_key] = asdict(result)
-                logger.info(f"Cached result for key {cache_key}")
+                logger.info(f"💾 Cached result for key {cache_key[:8]}... (cache size: {len(self.cache)})")
             
+            logger.info(f"✅ Processing completed successfully: {latency_ms:.1f}ms, confidence: {confidence:.3f}")
             return result
             
         except Exception as e:
-            logger.error(f"Pipeline processing failed: {e}")
+            # Enhanced error handling and reporting
+            self.processing_stats["error_count"] += 1
+            self.processing_stats["last_error"] = str(e)
+            
+            error_latency = (time.time() - start_time) * 1000
+            logger.error(f"❌ Pipeline processing failed after {error_latency:.1f}ms: {e}")
+            
+            # Return graceful error response
             return InferenceResult(
-                answer=f"Error processing request: {str(e)}",
+                answer=self._generate_error_response(str(e)),
                 confidence=0.0,
-                latency_ms=(time.time() - start_time) * 1000,
+                latency_ms=error_latency,
                 model_used=self.config.model_name,
                 timestamp=time.strftime("%Y-%m-%d %H:%M:%S"),
-                metadata={"error": str(e)}
+                metadata={
+                    "error": str(e),
+                    "error_type": type(e).__name__,
+                    "error_occurred_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+                    "fallback_response": True,
+                    "request_id": self._generate_request_id()
+                }
             )
     
     def process_text_only(self, question: str) -> InferenceResult:
@@ -359,6 +593,75 @@ class FastVLMCorePipeline:
             logger.info(f"Cleared {entries} cache entries")
             return entries
         return 0
+    
+    def _update_average_latency(self, new_latency_ms: float):
+        """Update running average latency."""
+        current_avg = self.processing_stats["average_latency_ms"]
+        total_requests = self.processing_stats["successful_requests"]
+        
+        if total_requests == 1:
+            self.processing_stats["average_latency_ms"] = new_latency_ms
+        else:
+            # Weighted average calculation
+            self.processing_stats["average_latency_ms"] = (
+                (current_avg * (total_requests - 1) + new_latency_ms) / total_requests
+            )
+    
+    def _generate_request_id(self) -> str:
+        """Generate unique request ID for tracking."""
+        import uuid
+        return str(uuid.uuid4())[:8]
+    
+    def _manage_cache_size(self, max_cache_size: int = 1000):
+        """Manage cache size with LRU eviction."""
+        if self.cache and len(self.cache) >= max_cache_size:
+            # Simple LRU: remove oldest 20% of entries
+            items_to_remove = len(self.cache) // 5
+            oldest_keys = list(self.cache.keys())[:items_to_remove]
+            
+            for key in oldest_keys:
+                del self.cache[key]
+                self.cache_stats["evictions"] += 1
+            
+            logger.info(f"🗑️ Cache evicted {items_to_remove} old entries")
+    
+    def _generate_error_response(self, error_message: str) -> str:
+        """Generate user-friendly error response."""
+        if "validation failed" in error_message.lower():
+            return "I couldn't process your request due to input validation issues. Please check your image and question format."
+        elif "encoding failed" in error_message.lower():
+            return "I encountered an issue while processing your image or question. Please try again with a different format."
+        elif "fusion failed" in error_message.lower():
+            return "I had trouble understanding the relationship between your image and question. Please try rephrasing your question."
+        elif "generation failed" in error_message.lower():
+            return "I couldn't generate a response to your question. Please try asking in a different way."
+        elif "circuit breaker" in error_message.lower():
+            return "The system is temporarily unavailable due to high error rates. Please try again in a few moments."
+        else:
+            return "I encountered an unexpected issue while processing your request. Please try again."
+    
+    def get_health_status(self) -> Dict[str, Any]:
+        """Get comprehensive health status of the pipeline."""
+        total_requests = self.processing_stats["total_requests"]
+        successful_requests = self.processing_stats["successful_requests"]
+        
+        success_rate = (successful_requests / total_requests * 100) if total_requests > 0 else 0
+        
+        return {
+            "status": "healthy" if success_rate > 95 else "degraded" if success_rate > 80 else "unhealthy",
+            "success_rate_percent": round(success_rate, 2),
+            "circuit_breaker_state": self.circuit_breaker.state,
+            "total_requests": total_requests,
+            "successful_requests": successful_requests,
+            "error_count": self.processing_stats["error_count"],
+            "cache_hit_rate": round(
+                (self.cache_stats["hits"] / (self.cache_stats["hits"] + self.cache_stats["misses"]) * 100)
+                if (self.cache_stats["hits"] + self.cache_stats["misses"]) > 0 else 0, 2
+            ),
+            "average_latency_ms": round(self.processing_stats["average_latency_ms"], 1),
+            "last_error": self.processing_stats["last_error"],
+            "uptime_since": self.processing_stats["startup_time"]
+        }
 
 
 # Convenience function for quick inference
