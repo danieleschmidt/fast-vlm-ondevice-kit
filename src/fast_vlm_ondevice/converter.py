@@ -57,6 +57,9 @@ except ImportError as e:
                 def __init__(self, *args, **kwargs): super().__init__()
         @staticmethod
         def device(name): return "cpu"
+        class cuda:
+            @staticmethod
+            def is_available(): return False
         @staticmethod
         def randn(*args): return None
         @staticmethod
@@ -71,6 +74,8 @@ except ImportError as e:
             return NoGrad()
         @staticmethod
         def load(*args, **kwargs): return {"model": "demo"}
+        @staticmethod
+        def mean(*args, **kwargs): return None
         class jit:
             @staticmethod
             def trace(*args): return None

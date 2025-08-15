@@ -19,7 +19,14 @@ import weakref
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import asynccontextmanager
 
-from .core_pipeline import FastVLMPipeline, PipelineConfig, PipelineMetrics
+from .core_pipeline import FastVLMCorePipeline as FastVLMPipeline, InferenceConfig as PipelineConfig
+# Define PipelineMetrics locally if not in core_pipeline
+from dataclasses import dataclass
+@dataclass 
+class PipelineMetrics:
+    inference_time_ms: float = 0.0
+    memory_usage_mb: float = 0.0
+    accuracy_score: float = 0.0
 from .mobile_optimizer import MobileOptimizer, MobileOptimizationConfig, OptimizationLevel
 from .reliability_engine import ReliabilityEngine, HealthStatus
 from .monitoring import MetricsCollector, PerformanceProfiler

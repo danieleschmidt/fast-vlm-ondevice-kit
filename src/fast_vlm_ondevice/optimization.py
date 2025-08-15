@@ -203,7 +203,7 @@ class ModelCompiler:
         """Initialize model compiler."""
         self.config = config
         
-    def compile_pytorch_model(self, model: torch.nn.Module) -> torch.nn.Module:
+    def compile_pytorch_model(self, model: "torch.nn.Module") -> "torch.nn.Module":
         """Compile PyTorch model for optimization."""
         if not OPTIMIZATION_DEPS or not self.config.enable_model_compilation:
             return model
@@ -235,7 +235,7 @@ class ModelCompiler:
             logger.warning(f"Model compilation failed: {e}")
             return model
     
-    def optimize_coreml_model(self, model: ct.models.MLModel) -> ct.models.MLModel:
+    def optimize_coreml_model(self, model: "ct.models.MLModel") -> "ct.models.MLModel":
         """Optimize Core ML model."""
         if not OPTIMIZATION_DEPS:
             return model
