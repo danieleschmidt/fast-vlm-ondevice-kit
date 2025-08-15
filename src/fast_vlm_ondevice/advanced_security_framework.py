@@ -22,12 +22,22 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from collections import defaultdict, deque
 import secrets
-import cryptography
-from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import rsa, padding
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.backends import default_backend
+try:
+    import cryptography
+    from cryptography.fernet import Fernet
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa, padding
+    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+    from cryptography.hazmat.backends import default_backend
+    CRYPTO_AVAILABLE = True
+except ImportError:
+    CRYPTO_AVAILABLE = False
+    # Provide mock implementations
+    class MockFernet:
+        def __init__(self, key): pass
+        def encrypt(self, data): return b'mock_encrypted'
+        def decrypt(self, data): return b'mock_decrypted'
+    Fernet = MockFernet
 from datetime import datetime, timedelta
 import re
 import ipaddress

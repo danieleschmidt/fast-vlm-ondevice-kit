@@ -24,7 +24,7 @@ from contextlib import asynccontextmanager
 import weakref
 
 from .intelligent_orchestrator import IntelligentOrchestrator, OrchestratorConfig
-from .core_pipeline import FastVLMPipeline, PipelineConfig
+from .core_pipeline import FastVLMCorePipeline as FastVLMPipeline, InferenceConfig as PipelineConfig
 from .monitoring import MetricsCollector, PerformanceProfiler
 from .security import SecurityScanner, InputValidator
 from .reliability_engine import ReliabilityEngine
