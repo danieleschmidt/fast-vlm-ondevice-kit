@@ -832,7 +832,7 @@ class ModelManager:
     def _generate_model_id(self, name: str, version: str, model_format: ModelFormat) -> str:
         """Generate unique model ID with format information."""
         content = f"{name}_{version}_{model_format.value}_{uuid.uuid4()}"
-        return hashlib.sha256(content.encode()).hexdigest()[:20]
+        return hashlib.md5(content.encode()).hexdigest()[:20]
     
     def _calculate_file_hash(self, filepath: str) -> str:
         """Calculate SHA-256 hash of file or directory."""
