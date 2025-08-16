@@ -143,7 +143,7 @@ class BatchProcessor:
     
     def submit_request(self, image_data: bytes, question: str, priority: int = 1) -> Future:
         """Submit request for batch processing."""
-        request_id = hashlib.sha256(f"{time.time()}{question}".encode()).hexdigest()[:8]
+        request_id = hashlib.md5(f"{time.time()}{question}".encode()).hexdigest()[:8]
         future = self.executor.submit(self._dummy_future_result)
         
         batch_request = BatchRequest(
@@ -352,7 +352,7 @@ class MobilePerformanceOptimizer:
             optimized_question = self._optimize_question(question, quality_settings)
             
             # Record for prefetching
-            image_hash = hashlib.sha256(image_data[:1000]).hexdigest()[:8]
+            image_hash = hashlib.md5(image_data[:1000]).hexdigest()[:8]
             self.prefetch_manager.record_query(image_hash, self._extract_question_pattern(question))
             
             # Process request

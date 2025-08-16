@@ -1,0 +1,347 @@
+{
+  "engine_id": "sec_1755354781_1772",
+  "timestamp": "2025-08-16T14:33:02.108524+00:00",
+  "security_score": 0.0,
+  "total_vulnerabilities": 27,
+  "vulnerabilities_by_severity": {
+    "critical": 17,
+    "high": 4,
+    "medium": 6,
+    "low": 0
+  },
+  "fixes_applied": 4,
+  "successful_fixes": 4,
+  "vulnerabilities": [
+    {
+      "vuln_id": "pattern_eval_/root/repo/comprehensive_quality_gates.py_2",
+      "severity": "critical",
+      "category": "pattern_detection",
+      "file_path": "/root/repo/comprehensive_quality_gates.py",
+      "line_number": 2,
+      "description": "Detected dangerous pattern: eval",
+      "recommendation": "Review usage of eval",
+      "auto_fixable": false,
+      "confidence": 0.8
+    },
+    {
+      "vuln_id": "pattern_eval_/root/repo/test_production_ready_system.py_1",
+      "severity": "critical",
+      "category": "pattern_detection",
+      "file_path": "/root/repo/test_production_ready_system.py",
+      "line_number": 1,
+      "description": "Detected dangerous pattern: eval",
+      "recommendation": "Review usage of eval",
+      "auto_fixable": false,
+      "confidence": 0.8
+    },
+    {
+      "vuln_id": "pattern_eval_/root/repo/autonomous_quality_gates.py_1",
+      "severity": "critical",
+      "category": "pattern_detection",
+      "file_path": "/root/repo/autonomous_quality_gates.py",
+      "line_number": 1,
+      "description": "Detected dangerous pattern: eval",
+      "recommendation": "Review usage of eval",
+      "auto_fixable": false,
+      "confidence": 0.8
+    },
+    {
+      "vuln_id": "pattern_exec_/root/repo/autonomous_quality_gates.py_1",
+      "severity": "critical",
+      "category": "pattern_detection",
+      "file_path": "/root/repo/autonomous_quality_gates.py",
+      "line_number": 1,
+      "description": "Detected dangerous pattern: exec",
+      "recommendation": "Review usage of exec",
+      "auto_fixable": false,
+      "confidence": 0.8
+    },
+    {
+      "vuln_id": "pattern_os.system_/root/repo/security_remediation.py_1",
+      "severity": "high",
+      "category": "pattern_detection",
+      "file_path": "/root/repo/security_remediation.py",
+      "line_number": 1,
+      "description": "Detected dangerous pattern: os.system",
+      "recommendation": "Review usage of os.system",
+      "auto_fixable": true,
+      "confidence": 0.8
+    },
+    {
+      "vuln_id": "pattern_os.system_/root/repo/security_remediation.py_2",
+      "severity": "high",
+      "category": "pattern_detection",
+      "file_path": "/root/repo/security_remediation.py",
+      "line_number": 2,
+      "description": "Detected dangerous pattern: os.system",
+      "recommendation": "Review usage of os.system",
+      "auto_fixable": true,
+      "confidence": 0.8
+    },
+    {
+      "vuln_id": "pattern_eval_/root/repo/security_remediation.py_3",
+      "severity": "critical",
+      "category": "pattern_detection",
+      "file_path": "/root/repo/security_remediation.py",
+      "line_number": 3,
+      "description": "Detected dangerous pattern: eval",
+      "recommendation": "Review usage of eval",
+      "auto_fixable": false,
+      "confidence": 0.8
+    },
+    {
+      "vuln_id": "pattern_exec_/root/repo/security_remediation.py_3",
+      "severity": "critical",
+      "category": "pattern_detection",
+      "file_path": "/root/repo/security_remediation.py",
+      "line_number": 3,
+      "description": "Detected dangerous pattern: exec",
+      "recommendation": "Review usage of exec",
+      "auto_fixable": false,
+      "confidence": 0.8
+    },
+    {
+      "vuln_id": "pattern_os.system_/root/repo/security_remediation.py_3",
+      "severity": "high",
+      "category": "pattern_detection",
+      "file_path": "/root/repo/security_remediation.py",
+      "line_number": 3,
+      "description": "Detected dangerous pattern: os.system",
+      "recommendation": "Review usage of os.system",
+      "auto_fixable": true,
+      "confidence": 0.8
+    },
+    {
+      "vuln_id": "pattern_pickle.load_/root/repo/security_remediation.py_3",
+      "severity": "critical",
+      "category": "pattern_detection",
+      "file_path": "/root/repo/security_remediation.py",
+      "line_number": 3,
+      "description": "Detected dangerous pattern: pickle.load",
+      "recommendation": "Review usage of pickle.load",
+      "auto_fixable": false,
+      "confidence": 0.8
+    },
+    {
+      "vuln_id": "pattern_os.system_/root/repo/security_remediation.py_5",
+      "severity": "high",
+      "category": "pattern_detection",
+      "file_path": "/root/repo/security_remediation.py",
+      "line_number": 5,
+      "description": "Detected dangerous pattern: os.system",
+      "recommendation": "Review usage of os.system",
+      "auto_fixable": true,
+      "confidence": 0.8
+    },
+    {
+      "vuln_id": "pattern_eval_/root/repo/tests/test_enhanced_core_pipeline.py_2",
+      "severity": "critical",
+      "category": "pattern_detection",
+      "file_path": "/root/repo/tests/test_enhanced_core_pipeline.py",
+      "line_number": 2,
+      "description": "Detected dangerous pattern: eval",
+      "recommendation": "Review usage of eval",
+      "auto_fixable": false,
+      "confidence": 0.8
+    },
+    {
+      "vuln_id": "pattern_eval_/root/repo/src/fast_vlm_ondevice/benchmarking.py_1",
+      "severity": "critical",
+      "category": "pattern_detection",
+      "file_path": "/root/repo/src/fast_vlm_ondevice/benchmarking.py",
+      "line_number": 1,
+      "description": "Detected dangerous pattern: eval",
+      "recommendation": "Review usage of eval",
+      "auto_fixable": false,
+      "confidence": 0.8
+    },
+    {
+      "vuln_id": "pattern_pickle.load_/root/repo/src/fast_vlm_ondevice/caching.py_1",
+      "severity": "critical",
+      "category": "pattern_detection",
+      "file_path": "/root/repo/src/fast_vlm_ondevice/caching.py",
+      "line_number": 1,
+      "description": "Detected dangerous pattern: pickle.load",
+      "recommendation": "Review usage of pickle.load",
+      "auto_fixable": false,
+      "confidence": 0.8
+    },
+    {
+      "vuln_id": "pattern_eval_/root/repo/src/fast_vlm_ondevice/converter.py_1",
+      "severity": "critical",
+      "category": "pattern_detection",
+      "file_path": "/root/repo/src/fast_vlm_ondevice/converter.py",
+      "line_number": 1,
+      "description": "Detected dangerous pattern: eval",
+      "recommendation": "Review usage of eval",
+      "auto_fixable": false,
+      "confidence": 0.8
+    },
+    {
+      "vuln_id": "pattern_eval_/root/repo/src/fast_vlm_ondevice/deployment.py_1",
+      "severity": "critical",
+      "category": "pattern_detection",
+      "file_path": "/root/repo/src/fast_vlm_ondevice/deployment.py",
+      "line_number": 1,
+      "description": "Detected dangerous pattern: eval",
+      "recommendation": "Review usage of eval",
+      "auto_fixable": false,
+      "confidence": 0.8
+    },
+    {
+      "vuln_id": "pattern_eval_/root/repo/src/fast_vlm_ondevice/input_validation.py_1",
+      "severity": "critical",
+      "category": "pattern_detection",
+      "file_path": "/root/repo/src/fast_vlm_ondevice/input_validation.py",
+      "line_number": 1,
+      "description": "Detected dangerous pattern: eval",
+      "recommendation": "Review usage of eval",
+      "auto_fixable": false,
+      "confidence": 0.8
+    },
+    {
+      "vuln_id": "pattern_pickle.load_/root/repo/src/fast_vlm_ondevice/model_manager.py_1",
+      "severity": "critical",
+      "category": "pattern_detection",
+      "file_path": "/root/repo/src/fast_vlm_ondevice/model_manager.py",
+      "line_number": 1,
+      "description": "Detected dangerous pattern: pickle.load",
+      "recommendation": "Review usage of pickle.load",
+      "auto_fixable": false,
+      "confidence": 0.8
+    },
+    {
+      "vuln_id": "pattern_eval_/root/repo/src/fast_vlm_ondevice/optimization.py_1",
+      "severity": "critical",
+      "category": "pattern_detection",
+      "file_path": "/root/repo/src/fast_vlm_ondevice/optimization.py",
+      "line_number": 1,
+      "description": "Detected dangerous pattern: eval",
+      "recommendation": "Review usage of eval",
+      "auto_fixable": false,
+      "confidence": 0.8
+    },
+    {
+      "vuln_id": "pattern_eval_/root/repo/src/fast_vlm_ondevice/security.py_1",
+      "severity": "critical",
+      "category": "pattern_detection",
+      "file_path": "/root/repo/src/fast_vlm_ondevice/security.py",
+      "line_number": 1,
+      "description": "Detected dangerous pattern: eval",
+      "recommendation": "Review usage of eval",
+      "auto_fixable": false,
+      "confidence": 0.8
+    },
+    {
+      "vuln_id": "pattern_eval_/root/repo/src/fast_vlm_ondevice/testing.py_1",
+      "severity": "critical",
+      "category": "pattern_detection",
+      "file_path": "/root/repo/src/fast_vlm_ondevice/testing.py",
+      "line_number": 1,
+      "description": "Detected dangerous pattern: eval",
+      "recommendation": "Review usage of eval",
+      "auto_fixable": false,
+      "confidence": 0.8
+    },
+    {
+      "vuln_id": "dep_pyyaml<5.4_requirements.txt",
+      "severity": "medium",
+      "category": "dependency",
+      "file_path": "/root/repo/requirements.txt",
+      "line_number": 1,
+      "description": "Potentially vulnerable dependency: yaml vulnerability",
+      "recommendation": "Update pyyaml<5.4 to latest version",
+      "auto_fixable": false,
+      "confidence": 0.6
+    },
+    {
+      "vuln_id": "dep_pillow<8.1.1_requirements.txt",
+      "severity": "medium",
+      "category": "dependency",
+      "file_path": "/root/repo/requirements.txt",
+      "line_number": 1,
+      "description": "Potentially vulnerable dependency: pillow vulnerability",
+      "recommendation": "Update pillow<8.1.1 to latest version",
+      "auto_fixable": false,
+      "confidence": 0.6
+    },
+    {
+      "vuln_id": "dep_urllib3<1.26.5_requirements.txt",
+      "severity": "medium",
+      "category": "dependency",
+      "file_path": "/root/repo/requirements.txt",
+      "line_number": 1,
+      "description": "Potentially vulnerable dependency: urllib3 vulnerability",
+      "recommendation": "Update urllib3<1.26.5 to latest version",
+      "auto_fixable": false,
+      "confidence": 0.6
+    },
+    {
+      "vuln_id": "dep_pyyaml<5.4_requirements-dev.txt",
+      "severity": "medium",
+      "category": "dependency",
+      "file_path": "/root/repo/requirements-dev.txt",
+      "line_number": 1,
+      "description": "Potentially vulnerable dependency: yaml vulnerability",
+      "recommendation": "Update pyyaml<5.4 to latest version",
+      "auto_fixable": false,
+      "confidence": 0.6
+    },
+    {
+      "vuln_id": "dep_urllib3<1.26.5_requirements-dev.txt",
+      "severity": "medium",
+      "category": "dependency",
+      "file_path": "/root/repo/requirements-dev.txt",
+      "line_number": 1,
+      "description": "Potentially vulnerable dependency: urllib3 vulnerability",
+      "recommendation": "Update urllib3<1.26.5 to latest version",
+      "auto_fixable": false,
+      "confidence": 0.6
+    },
+    {
+      "vuln_id": "dep_pillow<8.1.1_pyproject.toml",
+      "severity": "medium",
+      "category": "dependency",
+      "file_path": "/root/repo/pyproject.toml",
+      "line_number": 1,
+      "description": "Potentially vulnerable dependency: pillow vulnerability",
+      "recommendation": "Update pillow<8.1.1 to latest version",
+      "auto_fixable": false,
+      "confidence": 0.6
+    }
+  ],
+  "applied_fixes": [
+    {
+      "fix_id": "fix_pattern_os.system_/root/repo/security_remediation.py_1_1755354782",
+      "vulnerability_id": "pattern_os.system_/root/repo/security_remediation.py_1",
+      "fix_type": "auto_remediation",
+      "description": "Applied fix for Detected dangerous pattern: os.system",
+      "timestamp": "2025-08-16 14:33:02.105067+00:00",
+      "success": true
+    },
+    {
+      "fix_id": "fix_pattern_os.system_/root/repo/security_remediation.py_2_1755354782",
+      "vulnerability_id": "pattern_os.system_/root/repo/security_remediation.py_2",
+      "fix_type": "auto_remediation",
+      "description": "Applied fix for Detected dangerous pattern: os.system",
+      "timestamp": "2025-08-16 14:33:02.106193+00:00",
+      "success": true
+    },
+    {
+      "fix_id": "fix_pattern_os.system_/root/repo/security_remediation.py_3_1755354782",
+      "vulnerability_id": "pattern_os.system_/root/repo/security_remediation.py_3",
+      "fix_type": "auto_remediation",
+      "description": "Applied fix for Detected dangerous pattern: os.system",
+      "timestamp": "2025-08-16 14:33:02.107232+00:00",
+      "success": true
+    },
+    {
+      "fix_id": "fix_pattern_os.system_/root/repo/security_remediation.py_5_1755354782",
+      "vulnerability_id": "pattern_os.system_/root/repo/security_remediation.py_5",
+      "fix_type": "auto_remediation",
+      "description": "Applied fix for Detected dangerous pattern: os.system",
+      "timestamp": "2025-08-16 14:33:02.108280+00:00",
+      "success": true
+    }
+  ]
+}
