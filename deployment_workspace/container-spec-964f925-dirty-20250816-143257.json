@@ -1,0 +1,14 @@
+{
+  "image": "fast-vlm-ondevice:964f925-dirty-20250816-143257",
+  "dockerfile": "/root/repo/deployment_workspace/Dockerfile",
+  "build_context": "/root/repo",
+  "build_args": {
+    "VERSION": "964f925-dirty-20250816-143257",
+    "BUILD_DATE": "2025-08-16T14:32:58.126704+00:00"
+  },
+  "labels": {
+    "version": "964f925-dirty-20250816-143257",
+    "project": "fast-vlm-ondevice",
+    "autonomous": "true"
+  }
+}

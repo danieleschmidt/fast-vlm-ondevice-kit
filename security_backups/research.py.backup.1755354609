@@ -604,7 +604,7 @@ class ExperimentRunner:
     def _generate_experiment_id(self) -> str:
         """Generate unique experiment ID."""
         content = f"{self.config.experiment_name}_{time.time()}_{hash(str(self.config.hyperparameters))}"
-        return hashlib.sha256(content.encode()).hexdigest()[:12]
+        return hashlib.md5(content.encode()).hexdigest()[:12]
     
     def _create_test_model(self) -> Any:
         """Create a test model for experiments."""

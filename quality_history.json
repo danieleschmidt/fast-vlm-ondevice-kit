@@ -1,0 +1,41 @@
+[
+  {
+    "timestamp": "2025-08-16T14:28:33.072779+00:00",
+    "session_id": "aq_1755354510_1706",
+    "overall_score": 4.8476062767201995,
+    "overall_status": "fail",
+    "metrics": {
+      "Security Scan (AST)": 0,
+      "Code Quality (AST)": 9.720253164556958,
+      "Test Coverage (Estimated)": 0.8675675675675676,
+      "Performance Analysis": 6.386075949367088,
+      "Adaptive Intelligence": 9.341772151898734
+    }
+  },
+  {
+    "timestamp": "2025-08-16T14:30:16.699236+00:00",
+    "session_id": "aq_1755354613_1732",
+    "overall_score": 4.835902948402946,
+    "overall_status": "fail",
+    "metrics": {
+      "Security Scan (AST)": 0,
+      "Code Quality (AST)": 9.721249999999994,
+      "Test Coverage (Estimated)": 0.8675675675675676,
+      "Performance Analysis": 6.3125,
+      "Adaptive Intelligence": 9.33125
+    }
+  },
+  {
+    "timestamp": "2025-08-16T14:33:01.060188+00:00",
+    "session_id": "aq_1755354778_1771",
+    "overall_score": 4.837093270426601,
+    "overall_status": "fail",
+    "metrics": {
+      "Security Scan (AST)": 0,
+      "Code Quality (AST)": 9.723456790123453,
+      "Test Coverage (Estimated)": 0.8675675675675676,
+      "Performance Analysis": 6.314814814814815,
+      "Adaptive Intelligence": 9.333333333333332
+    }
+  }
+]

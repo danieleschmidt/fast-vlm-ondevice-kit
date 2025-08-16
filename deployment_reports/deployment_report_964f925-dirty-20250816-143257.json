@@ -1,0 +1,401 @@
+{
+  "orchestrator_id": "ado_1755354777_1768",
+  "deployment_plan": {
+    "plan_id": "plan_ado_1755354777_1768",
+    "version": "964f925-dirty-20250816-143257",
+    "artifacts": [
+      {
+        "artifact_id": "source_964f925-dirty-20250816-143257",
+        "name": "fast-vlm-ondevice-964f925-dirty-20250816-143257.tar.gz",
+        "type": "package",
+        "version": "964f925-dirty-20250816-143257",
+        "path": "/root/repo/deployment_workspace/fast-vlm-ondevice-964f925-dirty-20250816-143257.tar.gz",
+        "size_bytes": 271000,
+        "checksum": "0f14fb37a5c2314f8e3b986532ff864e8872e769567675ce73a22f0c90c2346b",
+        "metadata": {
+          "format": "tar.gz",
+          "compression": "gzip",
+          "includes": [
+            "source",
+            "config",
+            "scripts",
+            "autonomous"
+          ]
+        },
+        "created_at": "2025-08-16 14:32:58.126488+00:00"
+      },
+      {
+        "artifact_id": "container_964f925-dirty-20250816-143257",
+        "name": "container-spec-964f925-dirty-20250816-143257.json",
+        "type": "container",
+        "version": "964f925-dirty-20250816-143257",
+        "path": "/root/repo/deployment_workspace/container-spec-964f925-dirty-20250816-143257.json",
+        "size_bytes": 411,
+        "checksum": "318cbafa16b369a1317061f2f3051fee947bb16ee6f1a40db3d38d49b7068004",
+        "metadata": {
+          "image": "fast-vlm-ondevice:964f925-dirty-20250816-143257",
+          "dockerfile": "/root/repo/deployment_workspace/Dockerfile",
+          "build_context": "/root/repo",
+          "build_args": {
+            "VERSION": "964f925-dirty-20250816-143257",
+            "BUILD_DATE": "2025-08-16T14:32:58.126704+00:00"
+          },
+          "labels": {
+            "version": "964f925-dirty-20250816-143257",
+            "project": "fast-vlm-ondevice",
+            "autonomous": "true"
+          }
+        },
+        "created_at": "2025-08-16 14:32:58.126978+00:00"
+      },
+      {
+        "artifact_id": "config_964f925-dirty-20250816-143257",
+        "name": "config-bundle-964f925-dirty-20250816-143257.tar.gz",
+        "type": "static",
+        "version": "964f925-dirty-20250816-143257",
+        "path": "/root/repo/deployment_workspace/config-bundle-964f925-dirty-20250816-143257.tar.gz",
+        "size_bytes": 11256,
+        "checksum": "5da6cb68306fde59ed20b0503263aab019d6efdc282f13ae178777d0d7e3744d",
+        "metadata": {
+          "format": "tar.gz",
+          "type": "configuration"
+        },
+        "created_at": "2025-08-16 14:32:58.164622+00:00"
+      },
+      {
+        "artifact_id": "docs_964f925-dirty-20250816-143257",
+        "name": "docs-964f925-dirty-20250816-143257.tar.gz",
+        "type": "static",
+        "version": "964f925-dirty-20250816-143257",
+        "path": "/root/repo/deployment_workspace/docs-964f925-dirty-20250816-143257.tar.gz",
+        "size_bytes": 117422,
+        "checksum": "3bd278b89b77052ba7c85be9e6c0d12655d85daa2b41ceaa8a6c02c38f4cfef7",
+        "metadata": {
+          "format": "tar.gz",
+          "type": "documentation"
+        },
+        "created_at": "2025-08-16 14:32:58.216326+00:00"
+      }
+    ],
+    "environments": [
+      {
+        "env_id": "env_development_ado_1755354777_1768",
+        "name": "development",
+        "type": "local",
+        "configuration": {
+          "type": "local",
+          "auto_deploy": true,
+          "health_checks": [
+            "basic",
+            "integration"
+          ],
+          "resource_limits": {
+            "cpu": "2",
+            "memory": "4Gi"
+          }
+        },
+        "health_checks": [
+          "basic",
+          "integration"
+        ],
+        "rollback_strategy": "blue_green"
+      },
+      {
+        "env_id": "env_staging_ado_1755354777_1768",
+        "name": "staging",
+        "type": "cloud",
+        "configuration": {
+          "type": "cloud",
+          "auto_deploy": false,
+          "health_checks": [
+            "basic",
+            "integration",
+            "performance"
+          ],
+          "resource_limits": {
+            "cpu": "4",
+            "memory": "8Gi"
+          }
+        },
+        "health_checks": [
+          "basic",
+          "integration",
+          "performance"
+        ],
+        "rollback_strategy": "blue_green"
+      },
+      {
+        "env_id": "env_production_ado_1755354777_1768",
+        "name": "production",
+        "type": "cloud",
+        "configuration": {
+          "type": "cloud",
+          "auto_deploy": false,
+          "health_checks": [
+            "basic",
+            "integration",
+            "performance",
+            "security"
+          ],
+          "resource_limits": {
+            "cpu": "8",
+            "memory": "16Gi"
+          }
+        },
+        "health_checks": [
+          "basic",
+          "integration",
+          "performance",
+          "security"
+        ],
+        "rollback_strategy": "blue_green"
+      }
+    ],
+    "deployment_strategy": "blue_green",
+    "pre_deploy_checks": [
+      "quality_gates_validation",
+      "security_scan",
+      "dependency_check",
+      "resource_availability"
+    ],
+    "post_deploy_validations": [
+      "health_check",
+      "integration_test",
+      "performance_benchmark",
+      "smoke_test"
+    ],
+    "rollback_triggers": [
+      "health_check_failure",
+      "error_rate_high",
+      "performance_degradation"
+    ],
+    "estimated_duration": 1800
+  },
+  "execution_summary": {
+    "total_artifacts": 4,
+    "total_size_mb": 0.38155460357666016,
+    "environments": 3,
+    "estimated_duration": 1800
+  },
+  "artifacts": [
+    {
+      "artifact_id": "source_964f925-dirty-20250816-143257",
+      "name": "fast-vlm-ondevice-964f925-dirty-20250816-143257.tar.gz",
+      "type": "package",
+      "version": "964f925-dirty-20250816-143257",
+      "path": "/root/repo/deployment_workspace/fast-vlm-ondevice-964f925-dirty-20250816-143257.tar.gz",
+      "size_bytes": 271000,
+      "checksum": "0f14fb37a5c2314f8e3b986532ff864e8872e769567675ce73a22f0c90c2346b",
+      "metadata": {
+        "format": "tar.gz",
+        "compression": "gzip",
+        "includes": [
+          "source",
+          "config",
+          "scripts",
+          "autonomous"
+        ]
+      },
+      "created_at": "2025-08-16 14:32:58.126488+00:00"
+    },
+    {
+      "artifact_id": "container_964f925-dirty-20250816-143257",
+      "name": "container-spec-964f925-dirty-20250816-143257.json",
+      "type": "container",
+      "version": "964f925-dirty-20250816-143257",
+      "path": "/root/repo/deployment_workspace/container-spec-964f925-dirty-20250816-143257.json",
+      "size_bytes": 411,
+      "checksum": "318cbafa16b369a1317061f2f3051fee947bb16ee6f1a40db3d38d49b7068004",
+      "metadata": {
+        "image": "fast-vlm-ondevice:964f925-dirty-20250816-143257",
+        "dockerfile": "/root/repo/deployment_workspace/Dockerfile",
+        "build_context": "/root/repo",
+        "build_args": {
+          "VERSION": "964f925-dirty-20250816-143257",
+          "BUILD_DATE": "2025-08-16T14:32:58.126704+00:00"
+        },
+        "labels": {
+          "version": "964f925-dirty-20250816-143257",
+          "project": "fast-vlm-ondevice",
+          "autonomous": "true"
+        }
+      },
+      "created_at": "2025-08-16 14:32:58.126978+00:00"
+    },
+    {
+      "artifact_id": "config_964f925-dirty-20250816-143257",
+      "name": "config-bundle-964f925-dirty-20250816-143257.tar.gz",
+      "type": "static",
+      "version": "964f925-dirty-20250816-143257",
+      "path": "/root/repo/deployment_workspace/config-bundle-964f925-dirty-20250816-143257.tar.gz",
+      "size_bytes": 11256,
+      "checksum": "5da6cb68306fde59ed20b0503263aab019d6efdc282f13ae178777d0d7e3744d",
+      "metadata": {
+        "format": "tar.gz",
+        "type": "configuration"
+      },
+      "created_at": "2025-08-16 14:32:58.164622+00:00"
+    },
+    {
+      "artifact_id": "docs_964f925-dirty-20250816-143257",
+      "name": "docs-964f925-dirty-20250816-143257.tar.gz",
+      "type": "static",
+      "version": "964f925-dirty-20250816-143257",
+      "path": "/root/repo/deployment_workspace/docs-964f925-dirty-20250816-143257.tar.gz",
+      "size_bytes": 117422,
+      "checksum": "3bd278b89b77052ba7c85be9e6c0d12655d85daa2b41ceaa8a6c02c38f4cfef7",
+      "metadata": {
+        "format": "tar.gz",
+        "type": "documentation"
+      },
+      "created_at": "2025-08-16 14:32:58.216326+00:00"
+    }
+  ],
+  "environments": [
+    {
+      "env_id": "env_development_ado_1755354777_1768",
+      "name": "development",
+      "type": "local",
+      "configuration": {
+        "type": "local",
+        "auto_deploy": true,
+        "health_checks": [
+          "basic",
+          "integration"
+        ],
+        "resource_limits": {
+          "cpu": "2",
+          "memory": "4Gi"
+        }
+      },
+      "health_checks": [
+        "basic",
+        "integration"
+      ],
+      "rollback_strategy": "blue_green"
+    },
+    {
+      "env_id": "env_staging_ado_1755354777_1768",
+      "name": "staging",
+      "type": "cloud",
+      "configuration": {
+        "type": "cloud",
+        "auto_deploy": false,
+        "health_checks": [
+          "basic",
+          "integration",
+          "performance"
+        ],
+        "resource_limits": {
+          "cpu": "4",
+          "memory": "8Gi"
+        }
+      },
+      "health_checks": [
+        "basic",
+        "integration",
+        "performance"
+      ],
+      "rollback_strategy": "blue_green"
+    },
+    {
+      "env_id": "env_production_ado_1755354777_1768",
+      "name": "production",
+      "type": "cloud",
+      "configuration": {
+        "type": "cloud",
+        "auto_deploy": false,
+        "health_checks": [
+          "basic",
+          "integration",
+          "performance",
+          "security"
+        ],
+        "resource_limits": {
+          "cpu": "8",
+          "memory": "16Gi"
+        }
+      },
+      "health_checks": [
+        "basic",
+        "integration",
+        "performance",
+        "security"
+      ],
+      "rollback_strategy": "blue_green"
+    }
+  ],
+  "timestamp": "2025-08-16T14:33:02.125878+00:00",
+  "configuration": {
+    "deployment": {
+      "strategy": "blue_green",
+      "timeout": 1800,
+      "health_check_timeout": 300,
+      "rollback_on_failure": true
+    },
+    "environments": {
+      "development": {
+        "type": "local",
+        "auto_deploy": true,
+        "health_checks": [
+          "basic",
+          "integration"
+        ],
+        "resource_limits": {
+          "cpu": "2",
+          "memory": "4Gi"
+        }
+      },
+      "staging": {
+        "type": "cloud",
+        "auto_deploy": false,
+        "health_checks": [
+          "basic",
+          "integration",
+          "performance"
+        ],
+        "resource_limits": {
+          "cpu": "4",
+          "memory": "8Gi"
+        }
+      },
+      "production": {
+        "type": "cloud",
+        "auto_deploy": false,
+        "health_checks": [
+          "basic",
+          "integration",
+          "performance",
+          "security"
+        ],
+        "resource_limits": {
+          "cpu": "8",
+          "memory": "16Gi"
+        }
+      }
+    },
+    "artifacts": {
+      "retention_days": 30,
+      "compression": true,
+      "encryption": true,
+      "signing": true
+    },
+    "monitoring": {
+      "enabled": true,
+      "metrics_interval": 30,
+      "alert_channels": [
+        "log",
+        "webhook"
+      ]
+    },
+    "rollback": {
+      "automatic": true,
+      "triggers": [
+        "health_check_failure",
+        "error_rate_high",
+        "performance_degradation"
+      ],
+      "max_rollback_attempts": 3
+    }
+  }
+}

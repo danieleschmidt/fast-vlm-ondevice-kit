@@ -1,0 +1,72 @@
+{
+  "deployment": {
+    "strategy": "blue_green",
+    "timeout": 1800,
+    "health_check_timeout": 300,
+    "rollback_on_failure": true
+  },
+  "environments": {
+    "development": {
+      "type": "local",
+      "auto_deploy": true,
+      "health_checks": [
+        "basic",
+        "integration"
+      ],
+      "resource_limits": {
+        "cpu": "2",
+        "memory": "4Gi"
+      }
+    },
+    "staging": {
+      "type": "cloud",
+      "auto_deploy": false,
+      "health_checks": [
+        "basic",
+        "integration",
+        "performance"
+      ],
+      "resource_limits": {
+        "cpu": "4",
+        "memory": "8Gi"
+      }
+    },
+    "production": {
+      "type": "cloud",
+      "auto_deploy": false,
+      "health_checks": [
+        "basic",
+        "integration",
+        "performance",
+        "security"
+      ],
+      "resource_limits": {
+        "cpu": "8",
+        "memory": "16Gi"
+      }
+    }
+  },
+  "artifacts": {
+    "retention_days": 30,
+    "compression": true,
+    "encryption": true,
+    "signing": true
+  },
+  "monitoring": {
+    "enabled": true,
+    "metrics_interval": 30,
+    "alert_channels": [
+      "log",
+      "webhook"
+    ]
+  },
+  "rollback": {
+    "automatic": true,
+    "triggers": [
+      "health_check_failure",
+      "error_rate_high",
+      "performance_degradation"
+    ],
+    "max_rollback_attempts": 3
+  }
+}

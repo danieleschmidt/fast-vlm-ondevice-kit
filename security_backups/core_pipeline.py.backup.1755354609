@@ -162,7 +162,7 @@ class MockVisionEncoder:
         """Encode image to feature representation."""
         # Simulate image encoding with deterministic features
         import hashlib
-        image_hash = hashlib.sha256(image_data).hexdigest()
+        image_hash = hashlib.md5(image_data).hexdigest()
         
         # Generate mock features based on image hash (deterministic)
         features = [
