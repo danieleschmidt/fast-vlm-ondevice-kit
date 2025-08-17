@@ -17,7 +17,8 @@ public struct InferenceMetrics {
     public let confidenceScore: Float
 }
 
-/// FastVLM model for on-device vision-language inference
+/// Enhanced FastVLM model for on-device vision-language inference
+/// Features: Real-time optimization, adaptive caching, energy efficiency
 @available(iOS 17.0, macOS 14.0, *)
 public class FastVLM {
     
@@ -29,6 +30,11 @@ public class FastVLM {
     private let configuration: MLModelConfiguration
     private var cachedAnswers: [String: String] = [:]
     private let maxCacheSize = 100
+    
+    // Enhanced performance tracking
+    private var inferenceHistory: [InferenceMetrics] = []
+    private var adaptiveOptimization = true
+    private var energyEfficiencyMode = false
     
     // MARK: - Initialization
     

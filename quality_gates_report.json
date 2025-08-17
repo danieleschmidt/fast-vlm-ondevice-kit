@@ -1,43 +1,53 @@
 {
-  "timestamp": "2025-08-12 20:34:04",
-  "overall_score": 37,
-  "max_score": 50,
-  "overall_percentage": 74.0,
-  "status": "CONDITIONAL",
-  "gate_results": {
-    "functional_testing": {
-      "score": 8,
-      "max_score": 10,
-      "percentage": 80.0
+  "timestamp": 1755474730.6229627,
+  "total_gates": 11,
+  "passed_gates": 2,
+  "success_rate": 18.181818181818183,
+  "duration_seconds": 0.0740654468536377,
+  "results": {
+    "Core Architecture": {
+      "passed": false,
+      "reason": "Core architecture test failed: No module named 'numpy'"
     },
-    "security_validation": {
-      "score": 8,
-      "max_score": 10,
-      "percentage": 80.0
+    "Import Structure": {
+      "passed": false,
+      "reason": "Import structure test failed: No module named 'numpy'"
     },
-    "performance_scalability": {
-      "score": 10,
-      "max_score": 10,
-      "percentage": 100.0
+    "Security Framework": {
+      "passed": false,
+      "reason": "Security framework test failed: No module named 'numpy'"
     },
-    "architecture_quality": {
-      "score": 8,
-      "max_score": 8,
-      "percentage": 100.0
+    "Performance Engine": {
+      "passed": false,
+      "reason": "Performance engine test failed: No module named 'numpy'"
     },
-    "production_readiness": {
-      "score": 3,
-      "max_score": 12,
-      "percentage": 25.0
+    "Error Recovery": {
+      "passed": false,
+      "reason": "Error recovery test failed: No module named 'numpy'"
+    },
+    "Mobile Optimization": {
+      "passed": false,
+      "reason": "Mobile optimization test failed: No module named 'numpy'"
+    },
+    "Logging System": {
+      "passed": false,
+      "reason": "Logging system test failed: No module named 'numpy'"
+    },
+    "Code Quality": {
+      "passed": true,
+      "details": "Code quality check passed - 43 files, 100.0% with docstrings"
+    },
+    "Memory Management": {
+      "passed": false,
+      "reason": "Memory management test failed: No module named 'psutil'"
+    },
+    "Concurrency Safety": {
+      "passed": false,
+      "reason": "Concurrency errors: [\"Worker 0: No module named 'numpy'\", \"Worker 1: No module named 'numpy'\", \"Worker 3: No module named 'numpy'\", \"Worker 2: No module named 'numpy'\", \"Worker 4: No module named 'numpy'\"]"
+    },
+    "Production Readiness": {
+      "passed": true,
+      "details": "Production readiness check passed"
     }
-  },
-  "recommendations": [
-    "Enhance production readiness features"
-  ],
-  "next_steps": [
-    "Address identified quality gaps",
-    "Re-run quality gates",
-    "Conduct additional testing",
-    "Review architecture decisions"
-  ]
+  }
 }
