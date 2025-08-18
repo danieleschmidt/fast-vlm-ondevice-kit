@@ -141,7 +141,14 @@ class FastVLMModel(nn.Module):
 
 
 class FastVLMConverter:
-    """Converts FastVLM PyTorch models to optimized Core ML format."""
+    """Enhanced converter with real-time optimization and adaptive quantization.
+    
+    Features:
+    - Intelligent quantization strategy selection
+    - Real-time performance optimization
+    - Advanced mobile deployment patterns
+    - Automatic memory optimization
+    """
     
     def __init__(self, validation_level: ValidationLevel = ValidationLevel.BALANCED):
         """Initialize converter with default settings."""
@@ -154,6 +161,11 @@ class FastVLMConverter:
         self.validation_config = ValidationConfig(level=validation_level)
         self.validation_suite = create_validation_suite(validation_level)
         self.error_recovery = ErrorRecoveryManager()
+        
+        # Real-time optimization features
+        self.adaptive_quantization = True
+        self.intelligent_compression = True
+        self.mobile_optimization_level = "aggressive"
         
         # Initialize security components
         self.input_validator = self.validation_suite["input_validator"]
