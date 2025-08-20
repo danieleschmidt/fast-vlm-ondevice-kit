@@ -23,6 +23,17 @@ class EnhancedInputValidator:
     """Enhanced input validation with security and safety checks."""
     
     def __init__(self):
+        # Import enhanced security framework
+        try:
+            from .enhanced_security_framework import create_enhanced_validator
+            self.security_validator = create_enhanced_validator()
+            self.enhanced_security = True
+            logger.info("🛡️ Enhanced security framework loaded")
+        except ImportError:
+            self.enhanced_security = False
+            logger.warning("Enhanced security framework not available, using basic validation")
+            
+        # Fallback validation parameters
         self.max_image_size_mb = 50  # 50MB max image size
         self.max_question_length = 1000  # Maximum question length
         self.blocked_patterns = [
@@ -33,7 +44,23 @@ class EnhancedInputValidator:
     def validate_image(self, image_data: bytes) -> Tuple[bool, str]:
         """Validate image data for security and format."""
         try:
-            # Check size
+            # Use enhanced security if available
+            if self.enhanced_security:
+                # Enhanced validation includes comprehensive security scanning
+                is_safe, message, incidents = self.security_validator.validate_request(
+                    image_data, "validation_check"
+                )
+                if not is_safe:
+                    return False, message
+                
+                # Additional size check
+                size_mb = len(image_data) / (1024 * 1024)
+                if size_mb > self.max_image_size_mb:
+                    return False, f"Image too large: {size_mb:.1f}MB (max: {self.max_image_size_mb}MB)"
+                
+                return True, "Valid image data (enhanced security)"
+            
+            # Fallback basic validation
             size_mb = len(image_data) / (1024 * 1024)
             if size_mb > self.max_image_size_mb:
                 return False, f"Image too large: {size_mb:.1f}MB (max: {self.max_image_size_mb}MB)"
@@ -57,7 +84,18 @@ class EnhancedInputValidator:
     def validate_question(self, question: str) -> Tuple[bool, str]:
         """Validate question text for safety and format."""
         try:
-            # Check length
+            # Use enhanced security if available
+            if self.enhanced_security:
+                # Create dummy image for question-only validation
+                dummy_image = b"validation_image_data"
+                is_safe, message, incidents = self.security_validator.validate_request(
+                    dummy_image, question
+                )
+                if not is_safe:
+                    return False, message
+                return True, "Valid question (enhanced security)"
+            
+            # Fallback basic validation
             if len(question) > self.max_question_length:
                 return False, f"Question too long: {len(question)} chars (max: {self.max_question_length})"
             
@@ -78,6 +116,18 @@ class EnhancedInputValidator:
             
         except Exception as e:
             return False, f"Question validation error: {e}"
+    
+    def get_security_status(self) -> Dict[str, Any]:
+        """Get security status information."""
+        if self.enhanced_security and hasattr(self.security_validator, 'get_security_status'):
+            return self.security_validator.get_security_status()
+        else:
+            return {
+                "enhanced_security": self.enhanced_security,
+                "validation_mode": "basic" if not self.enhanced_security else "enhanced",
+                "max_image_size_mb": self.max_image_size_mb,
+                "max_question_length": self.max_question_length
+            }
 
 
 class CircuitBreaker:
@@ -347,6 +397,23 @@ class FastVLMCorePipeline:
                 logger.warning(f"Mobile optimizer disabled: {e}")
                 self.mobile_optimizer = None
             
+            # Initialize hyper scaling engine (Generation 3)
+            try:
+                from .hyper_scaling_engine import create_hyper_scaling_engine, ScalingStrategy
+                self.scaling_engine = create_hyper_scaling_engine(
+                    min_workers=1,
+                    max_workers=4,  # Conservative for local development
+                    cache_l1_size=50,
+                    cache_l2_size=200,
+                    strategy=ScalingStrategy.ADAPTIVE
+                )
+                self.scaling_enabled = True
+                logger.info("🚀 Hyper scaling engine enabled")
+            except Exception as e:
+                logger.warning(f"Scaling engine disabled: {e}")
+                self.scaling_engine = None
+                self.scaling_enabled = False
+            
             logger.info(f"✅ FastVLMCorePipeline initialized successfully with {self.config.model_name}")
             
         except Exception as e:
@@ -380,6 +447,17 @@ class FastVLMCorePipeline:
     
     def process_image_question(self, image_data: bytes, question: str) -> InferenceResult:
         """Process image and question to generate answer with enhanced error handling."""
+        # Use scaling engine if available (Generation 3)
+        if self.scaling_enabled and self.scaling_engine:
+            try:
+                result_dict = self.scaling_engine.process_request_scaled(
+                    image_data, question, self._process_image_question_scaled
+                )
+                return InferenceResult(**result_dict)
+            except Exception as e:
+                logger.warning(f"Scaling engine failed, falling back to standard processing: {e}")
+        
+        # Standard processing (Generations 1 & 2)
         with self.processing_lock:
             return self.circuit_breaker.call(self._process_image_question_internal, image_data, question)
     
@@ -612,11 +690,11 @@ class FastVLMCorePipeline:
         import uuid
         return str(uuid.uuid4())[:8]
     
-    def _manage_cache_size(self, max_cache_size: int = 1000):
+    def _manage_cache_size(self, max_cache_size: int = 100):
         """Manage cache size with LRU eviction."""
         if self.cache and len(self.cache) >= max_cache_size:
             # Simple LRU: remove oldest 20% of entries
-            items_to_remove = len(self.cache) // 5
+            items_to_remove = max(1, len(self.cache) // 5)
             oldest_keys = list(self.cache.keys())[:items_to_remove]
             
             for key in oldest_keys:
@@ -647,8 +725,16 @@ class FastVLMCorePipeline:
         
         success_rate = (successful_requests / total_requests * 100) if total_requests > 0 else 0
         
-        return {
-            "status": "healthy" if success_rate > 95 else "degraded" if success_rate > 80 else "unhealthy",
+        # Get security status if available
+        security_status = {}
+        if hasattr(self.input_validator, 'get_security_status'):
+            try:
+                security_status = self.input_validator.get_security_status()
+            except:
+                security_status = {"enhanced_security": False}
+        
+        base_status = {
+            "status": "healthy" if success_rate >= 95 else "degraded" if success_rate >= 80 else "unhealthy",
             "success_rate_percent": round(success_rate, 2),
             "circuit_breaker_state": self.circuit_breaker.state,
             "total_requests": total_requests,
@@ -662,6 +748,38 @@ class FastVLMCorePipeline:
             "last_error": self.processing_stats["last_error"],
             "uptime_since": self.processing_stats["startup_time"]
         }
+        
+        # Merge security status
+        if security_status:
+            base_status["security"] = security_status
+        
+        # Add scaling engine status (Generation 3)
+        if self.scaling_enabled and self.scaling_engine:
+            try:
+                scaling_report = self.scaling_engine.get_performance_report()
+                base_status["scaling"] = {
+                    "enabled": True,
+                    "workers": scaling_report["worker_pool"]["current_workers"],
+                    "cache_hit_rate": scaling_report["cache_performance"]["overall_hit_rate_percent"],
+                    "total_scaled": scaling_report["engine_stats"]["total_scaled"],
+                    "auto_scaling": scaling_report["auto_scaling_enabled"]
+                }
+            except Exception as e:
+                base_status["scaling"] = {"enabled": False, "error": str(e)}
+        else:
+            base_status["scaling"] = {"enabled": False}
+        
+        return base_status
+    
+    def _process_image_question_scaled(self, image_data: bytes, question: str) -> Dict[str, Any]:
+        """Processing function for scaling engine (returns dict instead of InferenceResult)."""
+        result = self._process_image_question_internal(image_data, question)
+        
+        # Convert InferenceResult to dict
+        if hasattr(result, '__dict__'):
+            return asdict(result) if hasattr(result, '_fields') else vars(result)
+        else:
+            return result
 
 
 # Convenience function for quick inference
