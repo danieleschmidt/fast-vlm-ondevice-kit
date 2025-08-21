@@ -1,0 +1,260 @@
+{
+  "security_status": {
+    "total_incidents": 0,
+    "blocked_requests": 0,
+    "high_severity_incidents": 0,
+    "active_clients": 1,
+    "recent_incidents": [],
+    "threat_summary": {},
+    "security_config": {
+      "max_file_size_mb": 50,
+      "max_request_rate": 100,
+      "enable_content_scanning": true,
+      "enable_malware_detection": true,
+      "enable_behavioral_analysis": true,
+      "quarantine_suspicious_requests": true
+    }
+  },
+  "monitoring_report": {
+    "metrics": {
+      "requests_total": 5,
+      "requests_successful": 0,
+      "requests_failed": 6,
+      "average_latency_ms": 0.3867149353027344,
+      "security_incidents": 5,
+      "errors_recovered": 4,
+      "system_health_score": 100.0
+    },
+    "recent_alerts": [
+      {
+        "timestamp": "2025-08-21 21:49:10",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 4",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:10",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 4",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:10",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 4",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:10",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 4",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:10",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 5",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:11",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 5",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:11",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 5",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:11",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 5",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:11",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 5",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:11",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 5",
+        "severity": "critical",
+        "acknowledged": false
+      }
+    ],
+    "unacknowledged_alerts": [
+      {
+        "timestamp": "2025-08-21 21:49:10",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 1",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:10",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 1",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:10",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 1",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:10",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 1",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:10",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 2",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:10",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 2",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:10",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 2",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:10",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 2",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:10",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 3",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:10",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 3",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:10",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 3",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:10",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 3",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:10",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 4",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:10",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 4",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:10",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 4",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:10",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 4",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:10",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 5",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:11",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 5",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:11",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 5",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:11",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 5",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:11",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 5",
+        "severity": "critical",
+        "acknowledged": false
+      },
+      {
+        "timestamp": "2025-08-21 21:49:11",
+        "type": "SECURITY_INCIDENT",
+        "message": "Security incidents: 5",
+        "severity": "critical",
+        "acknowledged": false
+      }
+    ],
+    "monitoring_status": "active",
+    "last_updated": "2025-08-21 21:49:11"
+  },
+  "timestamp": "2025-08-21 21:49:11"
+}

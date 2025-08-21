@@ -1,0 +1,86 @@
+{
+  "scenarios": [
+    {
+      "scenario": "Low Load Test",
+      "total_time_s": 2.035020112991333,
+      "successful_requests": 5,
+      "throughput_req_sec": 2.4569781733755742,
+      "avg_latency_ms": 303.537654876709,
+      "cache_hit_rate": 0.0
+    },
+    {
+      "scenario": "High Load Test",
+      "total_time_s": 1.97835373878479,
+      "successful_requests": 20,
+      "throughput_req_sec": 10.109415524589178,
+      "avg_latency_ms": 1162.3398065567017,
+      "cache_hit_rate": 0.0
+    },
+    {
+      "scenario": "Cache Efficiency Test",
+      "total_time_s": 1.4730429649353027,
+      "successful_requests": 15,
+      "throughput_req_sec": 10.183002367930804,
+      "avg_latency_ms": 730.4811954498291,
+      "cache_hit_rate": 0.0
+    },
+    {
+      "scenario": "Stress Test",
+      "total_time_s": 4.013145685195923,
+      "successful_requests": 50,
+      "throughput_req_sec": 12.459054298587963,
+      "avg_latency_ms": 1884.6070861816406,
+      "cache_hit_rate": 0.0
+    }
+  ],
+  "engine_performance": {
+    "performance_summary": {
+      "avg_latency_ms": 1884.6180391311646,
+      "avg_throughput_ops_sec": 1.051291532209239,
+      "avg_cache_hit_rate": 0.0,
+      "current_scaling_factor": 2.0
+    },
+    "engine_stats": {
+      "total_requests": 90,
+      "cache_optimized": 90,
+      "auto_scaled": 0,
+      "preloaded": 0
+    },
+    "cache_performance": {
+      "cache_stats": {
+        "l1_hits": 0,
+        "l1_misses": 90,
+        "l2_hits": 0,
+        "l2_misses": 90,
+        "l3_hits": 0,
+        "l3_misses": 90,
+        "evictions": 36,
+        "preloads": 0
+      },
+      "overall_hit_rate": 0.0,
+      "l1_size": 50,
+      "l2_size": 36,
+      "l3_size": 0,
+      "total_keys": 86
+    },
+    "worker_pool": {
+      "current_workers": 4,
+      "queue_size": 0,
+      "avg_execution_time_ms": 331.78731203079224,
+      "avg_queue_time_ms": 2676.257848739624,
+      "total_tasks_processed": 90,
+      "success_rate": 100.0
+    },
+    "optimization_strategies_active": 4
+  },
+  "test_timestamp": "2025-08-21 21:51:28",
+  "configuration": {
+    "min_workers": 2,
+    "max_workers": 8,
+    "target_latency_ms": 200.0,
+    "target_cpu_usage": 70.0,
+    "scale_up_threshold": 80.0,
+    "scale_down_threshold": 30.0,
+    "cooldown_seconds": 30
+  }
+}

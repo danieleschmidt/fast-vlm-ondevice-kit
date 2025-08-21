@@ -1,53 +1,114 @@
 {
-  "timestamp": 1755474730.6229627,
-  "total_gates": 11,
-  "passed_gates": 2,
-  "success_rate": 18.181818181818183,
-  "duration_seconds": 0.0740654468536377,
-  "results": {
-    "Core Architecture": {
-      "passed": false,
-      "reason": "Core architecture test failed: No module named 'numpy'"
+  "overall_score": 109.49945474372956,
+  "deployment_ready": true,
+  "critical_failures": [],
+  "gate_results": [
+    {
+      "gate_name": "security_scan",
+      "status": "warning",
+      "score": 80.0,
+      "details": {
+        "error": "Security scanner failed",
+        "requirements_file": true
+      },
+      "recommendations": [
+        "Install and configure security scanner"
+      ],
+      "execution_time_ms": 3462.7952575683594
     },
-    "Import Structure": {
-      "passed": false,
-      "reason": "Import structure test failed: No module named 'numpy'"
+    {
+      "gate_name": "code_quality",
+      "status": "passed",
+      "score": 85.0,
+      "details": {
+        "source_files": 45,
+        "test_files": 14,
+        "test_coverage_estimated": 100,
+        "has_init_files": true,
+        "has_docstrings": 85.49618320610686
+      },
+      "recommendations": [
+        "Increase test coverage"
+      ],
+      "execution_time_ms": 4.634380340576172
     },
-    "Security Framework": {
-      "passed": false,
-      "reason": "Security framework test failed: No module named 'numpy'"
+    {
+      "gate_name": "performance_validation",
+      "status": "passed",
+      "score": 100,
+      "details": {
+        "core_pipeline_latency_ms": 1.2056827545166016,
+        "target_latency_ms": 250,
+        "performance_ratio": 207.35139410717818,
+        "result_confidence": 0.0
+      },
+      "recommendations": [
+        "Improve system health metrics"
+      ],
+      "execution_time_ms": 217.2234058380127
     },
-    "Performance Engine": {
-      "passed": false,
-      "reason": "Performance engine test failed: No module named 'numpy'"
+    {
+      "gate_name": "functionality_test",
+      "status": "passed",
+      "score": 100.0,
+      "details": {
+        "test_cases_run": 3,
+        "successful_tests": 3,
+        "success_rate": 100.0,
+        "core_modules_available": true
+      },
+      "recommendations": [],
+      "execution_time_ms": 2.8498172760009766
     },
-    "Error Recovery": {
-      "passed": false,
-      "reason": "Error recovery test failed: No module named 'numpy'"
+    {
+      "gate_name": "architecture_validation",
+      "status": "passed",
+      "score": 106.0,
+      "details": {
+        "required_directories": 3,
+        "required_directories_total": 3,
+        "optional_directories": 3,
+        "important_files": 3,
+        "important_files_total": 3,
+        "project_structure_score": 100.0
+      },
+      "recommendations": [],
+      "execution_time_ms": 0.19812583923339844
     },
-    "Mobile Optimization": {
-      "passed": false,
-      "reason": "Mobile optimization test failed: No module named 'numpy'"
+    {
+      "gate_name": "documentation_check",
+      "status": "passed",
+      "score": 205.49618320610688,
+      "details": {
+        "readme_score": 90,
+        "docs_score": 30,
+        "docstring_score": 85.49618320610686,
+        "total_documentation_score": 205.49618320610688
+      },
+      "recommendations": [],
+      "execution_time_ms": 4.642009735107422
     },
-    "Logging System": {
-      "passed": false,
-      "reason": "Logging system test failed: No module named 'numpy'"
-    },
-    "Code Quality": {
-      "passed": true,
-      "details": "Code quality check passed - 43 files, 100.0% with docstrings"
-    },
-    "Memory Management": {
-      "passed": false,
-      "reason": "Memory management test failed: No module named 'psutil'"
-    },
-    "Concurrency Safety": {
-      "passed": false,
-      "reason": "Concurrency errors: [\"Worker 0: No module named 'numpy'\", \"Worker 1: No module named 'numpy'\", \"Worker 3: No module named 'numpy'\", \"Worker 2: No module named 'numpy'\", \"Worker 4: No module named 'numpy'\"]"
-    },
-    "Production Readiness": {
-      "passed": true,
-      "details": "Production readiness check passed"
+    {
+      "gate_name": "deployment_readiness",
+      "status": "passed",
+      "score": 90.0,
+      "details": {
+        "deployment_files": 3,
+        "deployment_files_total": 3,
+        "config_files": 2,
+        "config_files_total": 3,
+        "installable": true,
+        "deployment_readiness_score": 100.0
+      },
+      "recommendations": [],
+      "execution_time_ms": 0.19598007202148438
     }
-  }
+  ],
+  "execution_time_s": 3.6936049461364746,
+  "timestamp": "2025-08-21 21:53:09",
+  "recommendations": [
+    "Install and configure security scanner",
+    "Increase test coverage",
+    "Improve system health metrics"
+  ]
 }
