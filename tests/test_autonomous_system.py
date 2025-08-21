@@ -20,7 +20,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from fast_vlm_ondevice.core_pipeline import (
-    FastVLMPipeline, PipelineConfig, PipelineMetrics, PipelineStage
+    FastVLMCorePipeline, InferenceConfig, InferenceResult
 )
 from fast_vlm_ondevice.mobile_optimizer import (
     MobileOptimizer, MobileOptimizationConfig, OptimizationLevel, DeviceProfile
