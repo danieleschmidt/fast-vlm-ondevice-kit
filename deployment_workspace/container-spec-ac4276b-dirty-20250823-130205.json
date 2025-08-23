@@ -1,0 +1,14 @@
+{
+  "image": "fast-vlm-ondevice:ac4276b-dirty-20250823-130205",
+  "dockerfile": "/root/repo/deployment_workspace/Dockerfile",
+  "build_context": "/root/repo",
+  "build_args": {
+    "VERSION": "ac4276b-dirty-20250823-130205",
+    "BUILD_DATE": "2025-08-23T13:02:06.297161+00:00"
+  },
+  "labels": {
+    "version": "ac4276b-dirty-20250823-130205",
+    "project": "fast-vlm-ondevice",
+    "autonomous": "true"
+  }
+}

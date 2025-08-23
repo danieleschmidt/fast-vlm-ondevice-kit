@@ -37,5 +37,31 @@
       "Performance Analysis": 6.314814814814815,
       "Adaptive Intelligence": 9.333333333333332
     }
+  },
+  {
+    "timestamp": "2025-08-23T13:01:32.266284+00:00",
+    "session_id": "aq_1755954086_1800",
+    "overall_score": 4.836596736596736,
+    "overall_status": "fail",
+    "metrics": {
+      "Security Scan (AST)": 0,
+      "Code Quality (AST)": 9.728522336769755,
+      "Test Coverage (Estimated)": 0.8111111111111111,
+      "Performance Analysis": 6.345360824742269,
+      "Adaptive Intelligence": 9.360824742268042
+    }
+  },
+  {
+    "timestamp": "2025-08-23T13:02:10.680691+00:00",
+    "session_id": "aq_1755954126_1833",
+    "overall_score": 4.836596736596736,
+    "overall_status": "fail",
+    "metrics": {
+      "Security Scan (AST)": 0,
+      "Code Quality (AST)": 9.728522336769755,
+      "Test Coverage (Estimated)": 0.8111111111111111,
+      "Performance Analysis": 6.345360824742269,
+      "Adaptive Intelligence": 9.360824742268042
+    }
   }
 ]
