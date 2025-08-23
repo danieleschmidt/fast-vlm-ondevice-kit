@@ -1,0 +1,83 @@
+{
+  "session_id": "aq_1755954126_1833",
+  "timestamp": "2025-08-23 13:02:10.680691+00:00",
+  "overall_status": "fail",
+  "score": 4.836596736596736,
+  "metrics": [
+    {
+      "name": "Security Scan (AST)",
+      "value": 0,
+      "threshold": 7.0,
+      "status": "fail",
+      "category": "security",
+      "confidence": 0.7,
+      "auto_adjusted": true,
+      "trend": "stable"
+    },
+    {
+      "name": "Code Quality (AST)",
+      "value": 9.728522336769755,
+      "threshold": 7.0,
+      "status": "pass",
+      "category": "quality",
+      "confidence": 0.8,
+      "auto_adjusted": false,
+      "trend": "stable"
+    },
+    {
+      "name": "Test Coverage (Estimated)",
+      "value": 0.8111111111111111,
+      "threshold": 0.7,
+      "status": "pass",
+      "category": "coverage",
+      "confidence": 0.6,
+      "auto_adjusted": true,
+      "trend": "stable"
+    },
+    {
+      "name": "Performance Analysis",
+      "value": 6.345360824742269,
+      "threshold": 8.0,
+      "status": "warn",
+      "category": "performance",
+      "confidence": 0.7,
+      "auto_adjusted": false,
+      "trend": "stable"
+    },
+    {
+      "name": "Adaptive Intelligence",
+      "value": 9.360824742268042,
+      "threshold": 7.0,
+      "status": "pass",
+      "category": "intelligence",
+      "confidence": 0.8,
+      "auto_adjusted": false,
+      "trend": "stable"
+    }
+  ],
+  "execution_time": 4.157755374908447,
+  "environment": {
+    "python_version": "3.12.3 (main, Jun 18 2025, 17:59:45) [GCC 13.3.0]",
+    "platform": "linux",
+    "cwd": "/root/repo",
+    "is_container": false,
+    "is_ci": false,
+    "has_git": true,
+    "disk_space_gb": 19.879383087158203,
+    "memory_available": {
+      "MemTotal": 3942.078125,
+      "MemAvailable": 3414.5
+    },
+    "has_pyproject_toml": true,
+    "has_requirements_txt": true,
+    "has_setup_py": false,
+    "has_tests": true,
+    "src_files": 97,
+    "test_files": 22
+  },
+  "adaptations_made": [],
+  "recommendations": [
+    "\ud83d\udd12 Security: Address Security Scan (AST) issues (score: 0.0)",
+    "\u26a0\ufe0f  Performance: Consider improving Performance Analysis"
+  ]
+}
