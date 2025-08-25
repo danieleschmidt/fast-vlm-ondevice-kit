@@ -106,7 +106,7 @@ shellingham==1.5.4
 six==1.17.0
 snowballstemmer==3.0.1
 sphinx==7.3.7
-sphinx-autodoc-typehints==1.25.3
+sphinx-autodoc-typehints==2.3.0
 sphinx-rtd-theme==3.0.2
 sphinxcontrib-applehelp==2.0.0
 sphinxcontrib-devhelp==2.0.0
