@@ -1,0 +1,171 @@
+{
+  "deployment_results": [
+    {
+      "deployment_id": "deploy-1756328394-f2d7d0e4",
+      "stage": "DeploymentStage.PREPARATION",
+      "success": true,
+      "execution_time_ms": 6.360054016113281,
+      "health_status": "HealthStatus.HEALTHY",
+      "metrics": {
+        "environments_configured": 2,
+        "bundle_path": "config-bundle-bundle-1756328394.tar.gz"
+      },
+      "logs": [
+        "Generated configuration for staging",
+        "Generated 6 secrets for staging",
+        "Generated configuration for production",
+        "Generated 6 secrets for production",
+        "Created configuration bundle: config-bundle-bundle-1756328394.tar.gz"
+      ],
+      "rollback_required": false,
+      "error_message": null,
+      "timestamp": "2025-08-27T20:59:54.282474"
+    },
+    {
+      "deployment_id": "deploy-1756328394-f2d7d0e4",
+      "stage": "DeploymentStage.VALIDATION",
+      "success": true,
+      "execution_time_ms": 0.03647804260253906,
+      "health_status": "HealthStatus.HEALTHY",
+      "metrics": {
+        "validations_performed": 4,
+        "warnings": 0,
+        "errors": 0
+      },
+      "logs": [
+        "CPU requirements validated",
+        "Memory requirements validated",
+        "Health check configuration validated",
+        "SSL configuration validated"
+      ],
+      "rollback_required": false,
+      "error_message": null,
+      "timestamp": "2025-08-27T20:59:54.282595"
+    },
+    {
+      "deployment_id": "deploy-1756328394-f2d7d0e4",
+      "stage": "DeploymentStage.STAGING",
+      "success": true,
+      "execution_time_ms": 2309.173345565796,
+      "health_status": "HealthStatus.HEALTHY",
+      "metrics": {
+        "components_provisioned": 7,
+        "total_resources": 17
+      },
+      "logs": [
+        "Provisioned compute: 5 resources",
+        "Provisioned storage: 2 resources",
+        "Provisioned network: 3 resources",
+        "Provisioned load_balancer: 1 resources",
+        "Provisioned database: 1 resources",
+        "Provisioned cache: 1 resources",
+        "Provisioned monitoring: 4 resources"
+      ],
+      "rollback_required": false,
+      "error_message": null,
+      "timestamp": "2025-08-27T20:59:56.591814"
+    },
+    {
+      "deployment_id": "deploy-1756328394-f2d7d0e4",
+      "stage": "DeploymentStage.CANARY",
+      "success": true,
+      "execution_time_ms": 3003.7639141082764,
+      "health_status": "HealthStatus.HEALTHY",
+      "metrics": {
+        "canary_percentage": 10,
+        "error_rate": 0.02,
+        "response_time_p95": 150.0,
+        "throughput_rps": 100.0,
+        "cpu_usage": 45.0,
+        "memory_usage": 60.0
+      },
+      "logs": [
+        "Deploying canary to 10% of traffic",
+        "Canary metrics: {'error_rate': 0.02, 'response_time_p95': 150.0, 'throughput_rps': 100.0, 'cpu_usage': 45.0, 'memory_usage': 60.0}",
+        "Canary validation successful"
+      ],
+      "rollback_required": false,
+      "error_message": null,
+      "timestamp": "2025-08-27T20:59:59.595647"
+    },
+    {
+      "deployment_id": "deploy-1756328394-f2d7d0e4",
+      "stage": "DeploymentStage.PRODUCTION",
+      "success": true,
+      "execution_time_ms": 5006.990194320679,
+      "health_status": "HealthStatus.HEALTHY",
+      "metrics": {
+        "strategy": "blue_green",
+        "health_status": "healthy",
+        "deployment_time": 300
+      },
+      "logs": [
+        "Executing blue-green deployment",
+        "Deployment health: healthy"
+      ],
+      "rollback_required": false,
+      "error_message": null,
+      "timestamp": "2025-08-27T21:00:04.602878"
+    },
+    {
+      "deployment_id": "deploy-1756328394-f2d7d0e4",
+      "stage": "DeploymentStage.MONITORING",
+      "success": true,
+      "execution_time_ms": 0.1652240753173828,
+      "health_status": "HealthStatus.HEALTHY",
+      "metrics": {
+        "health_checks_registered": 3,
+        "monitoring_active": true
+      },
+      "logs": [
+        "Registered health checks",
+        "Started health monitoring",
+        "Configured alerting"
+      ],
+      "rollback_required": false,
+      "error_message": null,
+      "timestamp": "2025-08-27T21:00:04.603248"
+    },
+    {
+      "deployment_id": "deploy-1756328394-f2d7d0e4",
+      "stage": "DeploymentStage.CLEANUP",
+      "success": true,
+      "execution_time_ms": 0.55694580078125,
+      "health_status": "HealthStatus.HEALTHY",
+      "metrics": {
+        "files_cleaned": 1,
+        "deployment_history_size": 0
+      },
+      "logs": [],
+      "rollback_required": false,
+      "error_message": null,
+      "timestamp": "2025-08-27T21:00:04.603846"
+    }
+  ],
+  "system_status": {
+    "system_status": {
+      "infrastructure_resources": 7,
+      "active_configurations": 2,
+      "health_checks_active": 3,
+      "overall_health": "unknown"
+    },
+    "deployment_metrics": {
+      "total_deployments": 7,
+      "successful_deployments": 7,
+      "failed_deployments": 0,
+      "rollbacks_required": 0,
+      "avg_deployment_time_ms": 1475.2923079899379
+    },
+    "infrastructure_status": {
+      "provisioned_resources": {
+        "compute": 1,
+        "storage": 1,
+        "network": 1,
+        "database": 1
+      }
+    },
+    "recommendations": [
+      "Deployment system performing optimally"
+    ]
+  }
+}
