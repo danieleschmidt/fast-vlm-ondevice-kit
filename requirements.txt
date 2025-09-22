@@ -44,11 +44,11 @@ safetensors==0.5.3
 scipy==1.15.3
 structlog==25.4.0
 sympy==1.14.0
-tokenizers==0.21.4
+tokenizers==0.22.1
 torch==2.4.1
 torchvision==0.19.1
 tqdm==4.67.1
-transformers==4.54.1
+transformers==4.56.2
 triton==3.0.0
 typing-extensions==4.14.1
 urllib3==2.5.0
