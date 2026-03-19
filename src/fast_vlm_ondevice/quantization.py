@@ -1,263 +1,180 @@
 """
-Quantization configuration and utilities for FastVLM models.
+INT8 Quantization Simulator for edge deployment.
 
-Supports per-layer quantization strategies optimized for mobile deployment.
+Simulates the effect of 8-bit integer quantization on model weights and
+activations without requiring actual hardware-level quantization. Useful for:
+  - Estimating accuracy degradation before real quantization
+  - Understanding which layers are most quantization-sensitive
+  - Comparing FP32 vs INT8 performance characteristics
 """
 
-import logging
+import copy
 from dataclasses import dataclass, field
-from typing import Optional, Dict, List, Tuple, Any
-from enum import Enum
-import json
 
-logger = logging.getLogger(__name__)
-
-
-class QuantizationType(Enum):
-    """Supported quantization types."""
-    INT4 = "int4"
-    INT8 = "int8"
-    FP16 = "fp16"
-    FP32 = "fp32"
-
-
-class CalibrationDataset(Enum):
-    """Supported calibration datasets."""
-    VQA_V2 = "vqa_v2"
-    COCO_CAPTIONS = "coco_captions"
-    FLICKR30K = "flickr30k"
-    CUSTOM = "custom"
+import torch
+import torch.nn as nn
 
 
 @dataclass
-class QuantizationConfig:
-    """Configuration for model quantization strategies."""
-    
-    vision_encoder: str = "int4"
-    text_encoder: str = "int8"  
-    fusion_layers: str = "fp16"
-    decoder: str = "int4"
-    calibration_samples: int = 1000
-    calibration_dataset: str = "vqa_v2"
-    quality_threshold: float = 0.02  # Max acceptable accuracy drop
-    layer_specific_config: Dict[str, str] = field(default_factory=dict)
-    
-    def __post_init__(self):
-        """Validate quantization settings."""
-        valid_types = {qt.value for qt in QuantizationType}
-        
-        for field_name in ["vision_encoder", "text_encoder", "fusion_layers", "decoder"]:
-            value = getattr(self, field_name)
-            if value not in valid_types:
-                raise ValueError(f"{field_name} must be one of {valid_types}")
-                
-        if self.calibration_samples <= 0:
-            raise ValueError("calibration_samples must be positive")
-            
-        if not 0 <= self.quality_threshold <= 1:
-            raise ValueError("quality_threshold must be between 0 and 1")
-    
-    @classmethod
-    def mobile_optimized(cls) -> "QuantizationConfig":
-        """Preset for mobile-optimized quantization (maximum compression)."""
-        return cls(
-            vision_encoder="int4",
-            text_encoder="int4", 
-            fusion_layers="int8",
-            decoder="int4",
-            calibration_samples=500,
-            quality_threshold=0.03
-        )
-        
-    @classmethod
-    def balanced(cls) -> "QuantizationConfig":
-        """Preset for balanced accuracy/performance."""
-        return cls(
-            vision_encoder="int4",
-            text_encoder="int8",
-            fusion_layers="fp16", 
-            decoder="int4",
-            calibration_samples=1000,
-            quality_threshold=0.02
-        )
-    
-    @classmethod
-    def quality_focused(cls) -> "QuantizationConfig":
-        """Preset for maximum quality preservation."""
-        return cls(
-            vision_encoder="int8",
-            text_encoder="fp16",
-            fusion_layers="fp16",
-            decoder="int8", 
-            calibration_samples=2000,
-            quality_threshold=0.01
-        )
-    
-    @classmethod
-    def ultra_fast(cls) -> "QuantizationConfig":
-        """Preset for maximum speed (aggressive quantization)."""
-        return cls(
-            vision_encoder="int4",
-            text_encoder="int4",
-            fusion_layers="int4", 
-            decoder="int4",
-            calibration_samples=250,
-            quality_threshold=0.05
-        )
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert config to dictionary."""
+class QuantizationReport:
+    """Results from quantizing a model."""
+    layer_errors: dict[str, float] = field(default_factory=dict)
+    total_params: int = 0
+    quantized_params: int = 0
+    mean_weight_error: float = 0.0
+    max_weight_error: float = 0.0
+    snr_db: float = 0.0  # signal-to-noise ratio of weight approximation
+
+    def __str__(self) -> str:
+        lines = [
+            "QuantizationReport (FP32 → INT8)",
+            f"  Parameters quantized: {self.quantized_params:,} / {self.total_params:,}",
+            f"  Mean weight error:    {self.mean_weight_error:.6f}",
+            f"  Max weight error:     {self.max_weight_error:.6f}",
+            f"  Weight SNR:           {self.snr_db:.2f} dB",
+        ]
+        if self.layer_errors:
+            lines.append("  Per-layer mean errors:")
+            for name, err in sorted(self.layer_errors.items()):
+                lines.append(f"    {name:40s} {err:.6f}")
+        return "\n".join(lines)
+
+
+class QuantizationSimulator:
+    """
+    Simulates INT8 quantization on a PyTorch model.
+
+    Strategy: per-tensor symmetric quantization
+        - Compute scale = max(|w|) / 127
+        - Quantize:  w_q = round(clip(w / scale, -127, 127))
+        - Dequantize: w_approx = w_q * scale
+        - Error: |w - w_approx|
+
+    Usage::
+
+        model = TinyVLM()
+        sim = QuantizationSimulator()
+        q_model, report = sim.quantize(model)
+        print(report)
+    """
+
+    def __init__(self, bits: int = 8, skip_bn: bool = True):
+        """
+        Args:
+            bits: Quantization bit width (default 8 for INT8).
+            skip_bn: Skip BatchNorm layers (they're usually folded at inference).
+        """
+        assert bits in (4, 8, 16), f"Unsupported bit width: {bits}"
+        self.bits = bits
+        self.skip_bn = skip_bn
+        self._max_val = float(2 ** (bits - 1) - 1)  # 127 for INT8
+
+    def _quantize_tensor(self, w: torch.Tensor) -> torch.Tensor:
+        """Apply symmetric per-tensor quantization and dequantize."""
+        abs_max = w.abs().max().clamp(min=1e-9)
+        scale = abs_max / self._max_val
+        w_q = (w / scale).round().clamp(-self._max_val, self._max_val)
+        return w_q * scale  # dequantized (same dtype as original)
+
+    def quantize(
+        self, model: nn.Module, inplace: bool = False
+    ) -> tuple[nn.Module, QuantizationReport]:
+        """
+        Simulate INT8 quantization of all eligible weight tensors.
+
+        Args:
+            model: Source model (not modified unless inplace=True).
+            inplace: Modify model in place (default False — returns a copy).
+
+        Returns:
+            (quantized_model, QuantizationReport)
+        """
+        q_model = model if inplace else copy.deepcopy(model)
+        report = QuantizationReport()
+
+        total_error_sum = 0.0
+        total_error_max = 0.0
+        total_signal_power = 0.0
+        total_noise_power = 0.0
+
+        for name, module in q_model.named_modules():
+            # Optionally skip BatchNorm
+            if self.skip_bn and isinstance(module, (nn.BatchNorm1d, nn.BatchNorm2d)):
+                continue
+
+            layer_errors = []
+            for param_name, param in module.named_parameters(recurse=False):
+                if param.dtype not in (torch.float32, torch.float16, torch.bfloat16):
+                    continue
+
+                report.total_params += param.numel()
+                report.quantized_params += param.numel()
+
+                with torch.no_grad():
+                    original = param.data.clone()
+                    q_data = self._quantize_tensor(original)
+                    param.data.copy_(q_data)
+
+                error = (original - q_data).abs()
+                layer_errors.append(error.mean().item())
+                total_error_sum += error.mean().item()
+                total_error_max = max(total_error_max, error.max().item())
+
+                # SNR components
+                total_signal_power += original.pow(2).mean().item()
+                total_noise_power += error.pow(2).mean().item()
+
+            if layer_errors and name:
+                report.layer_errors[name] = float(torch.tensor(layer_errors).mean())
+
+        # Aggregate stats
+        n = len(report.layer_errors) or 1
+        report.mean_weight_error = total_error_sum / n
+        report.max_weight_error = total_error_max
+
+        if total_noise_power > 0:
+            import math
+            report.snr_db = 10 * math.log10(
+                total_signal_power / total_noise_power + 1e-12
+            )
+
+        return q_model, report
+
+    def compare_outputs(
+        self,
+        original_model: nn.Module,
+        quantized_model: nn.Module,
+        sample_inputs: tuple,
+    ) -> dict[str, float]:
+        """
+        Compare outputs of original vs quantized model on the same inputs.
+
+        Args:
+            original_model: FP32 model.
+            quantized_model: INT8-simulated model.
+            sample_inputs: Tuple of tensors passed directly to forward().
+
+        Returns:
+            dict with keys: mean_abs_diff, max_abs_diff, cosine_similarity
+        """
+        original_model.eval()
+        quantized_model.eval()
+
+        with torch.no_grad():
+            out_fp32 = original_model(*sample_inputs)
+            out_int8 = quantized_model(*sample_inputs)
+
+        diff = (out_fp32 - out_int8).abs()
+        cos_sim = F.cosine_similarity(
+            out_fp32.unsqueeze(0), out_int8.unsqueeze(0)
+        ).item()
+
         return {
-            "vision_encoder": self.vision_encoder,
-            "text_encoder": self.text_encoder,
-            "fusion_layers": self.fusion_layers,
-            "decoder": self.decoder,
-            "calibration_samples": self.calibration_samples,
-            "calibration_dataset": self.calibration_dataset,
-            "quality_threshold": self.quality_threshold,
-            "layer_specific_config": self.layer_specific_config
+            "mean_abs_diff": diff.mean().item(),
+            "max_abs_diff": diff.max().item(),
+            "cosine_similarity": cos_sim,
         }
-    
-    @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "QuantizationConfig":
-        """Create config from dictionary."""
-        return cls(**config_dict)
-    
-    def save(self, filepath: str):
-        """Save configuration to JSON file."""
-        with open(filepath, 'w') as f:
-            json.dump(self.to_dict(), f, indent=2)
-    
-    @classmethod
-    def load(cls, filepath: str) -> "QuantizationConfig":
-        """Load configuration from JSON file."""
-        with open(filepath, 'r') as f:
-            config_dict = json.load(f)
-        return cls.from_dict(config_dict)
 
 
-class QuantizationAnalyzer:
-    """Analyzes quantization impact and suggests optimal configurations."""
-    
-    def __init__(self):
-        self.calibration_data = []
-        self.quality_metrics = {}
-    
-    def analyze_model_sensitivity(self, model, sample_data: List[Tuple]) -> Dict[str, float]:
-        """Analyze which model components are most sensitive to quantization."""
-        logger.info("Analyzing model sensitivity to quantization")
-        
-        sensitivity_scores = {
-            "vision_encoder": 0.2,  # Relatively robust
-            "text_encoder": 0.4,    # Moderate sensitivity  
-            "fusion_layers": 0.8,   # High sensitivity
-            "decoder": 0.3          # Moderate sensitivity
-        }
-        
-        return sensitivity_scores
-    
-    def suggest_optimal_config(
-        self, 
-        model,
-        target_size_mb: Optional[float] = None,
-        target_latency_ms: Optional[float] = None,
-        min_accuracy: Optional[float] = None
-    ) -> QuantizationConfig:
-        """Suggest optimal quantization configuration based on constraints."""
-        logger.info("Suggesting optimal quantization configuration")
-        
-        # Analyze constraints and suggest appropriate preset
-        if target_size_mb and target_size_mb < 200:
-            return QuantizationConfig.ultra_fast()
-        elif min_accuracy and min_accuracy > 0.98:
-            return QuantizationConfig.quality_focused()
-        elif target_latency_ms and target_latency_ms < 150:
-            return QuantizationConfig.mobile_optimized()
-        else:
-            return QuantizationConfig.balanced()
-    
-    def estimate_compression_ratio(self, config: QuantizationConfig) -> float:
-        """Estimate compression ratio for given configuration."""
-        
-        # Compression ratios by quantization type (vs FP32)
-        compression_ratios = {
-            "fp32": 1.0,
-            "fp16": 2.0,
-            "int8": 4.0,
-            "int4": 8.0
-        }
-        
-        # Component size weights (rough estimates)
-        component_weights = {
-            "vision_encoder": 0.4,
-            "text_encoder": 0.2,
-            "fusion_layers": 0.1,
-            "decoder": 0.3
-        }
-        
-        total_compression = 0.0
-        for component, weight in component_weights.items():
-            quant_type = getattr(config, component)
-            compression = compression_ratios[quant_type]
-            total_compression += weight * compression
-        
-        return total_compression
-    
-    def estimate_accuracy_impact(self, config: QuantizationConfig) -> float:
-        """Estimate accuracy impact for given configuration."""
-        
-        # Accuracy impact by quantization type (estimated)
-        accuracy_impacts = {
-            "fp32": 0.0,
-            "fp16": 0.005,
-            "int8": 0.015,
-            "int4": 0.035
-        }
-        
-        # Component sensitivity weights
-        sensitivity_weights = {
-            "vision_encoder": 0.2,
-            "text_encoder": 0.3,
-            "fusion_layers": 0.4,
-            "decoder": 0.1
-        }
-        
-        total_impact = 0.0
-        for component, weight in sensitivity_weights.items():
-            quant_type = getattr(config, component)
-            impact = accuracy_impacts[quant_type]
-            total_impact += weight * impact
-        
-        return total_impact
-
-
-class CalibrationDatasetManager:
-    """Manages calibration datasets for quantization."""
-    
-    def __init__(self):
-        self.datasets = {}
-    
-    def load_calibration_data(
-        self, 
-        dataset_name: str, 
-        num_samples: int = 1000
-    ) -> List[Tuple]:
-        """Load calibration dataset."""
-        logger.info(f"Loading {num_samples} samples from {dataset_name}")
-        
-        # For demo purposes, return synthetic data
-        calibration_data = []
-        for i in range(num_samples):
-            # Synthetic image-question pairs
-            image_data = f"synthetic_image_{i}"
-            question = f"What is in this image? (sample {i})"
-            calibration_data.append((image_data, question))
-        
-        return calibration_data
-    
-    def validate_calibration_quality(self, data: List[Tuple]) -> float:
-        """Validate quality of calibration dataset."""
-        logger.info("Validating calibration dataset quality")
-        
-        # For demo, return high quality score
-        return 0.95
+# Avoid circular import — import F here for compare_outputs
+import torch.nn.functional as F  # noqa: E402

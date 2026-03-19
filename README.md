@@ -1,432 +1,177 @@
-# Fast VLM On-Device Kit
+# fast-vlm-ondevice
 
-[![Swift](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.3+-ee4c2c.svg)](https://pytorch.org)
-[![Core ML](https://img.shields.io/badge/Core%20ML-6.0+-blue.svg)](https://developer.apple.com/documentation/coreml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Paper](https://img.shields.io/badge/Paper-CVPR%202025-red.svg)](https://cvpr.thecvf.com/2025)
+Lightweight Vision-Language Model (VLM) toolkit for edge deployment.
 
-Turn Apple's CVPR-25 FastVLM encoder into a reproducible baseline for mobile apps. First complete implementation achieving <250ms multimodal inference on iPhone.
+Efficient image-text processing designed for CPU-bound, memory-constrained environments — mobile, embedded, IoT, and on-device inference.
 
-## 🚀 Overview
+---
 
-Apple's FastVLM paper demonstrated the first high-resolution Vision-Language Model running in real-time on mobile devices, but only released paper and checkpoints. This kit provides:
+## What's in here
 
-- **PyTorch → Core ML converter** with INT4 quantization
-- **Swift package** for iOS/macOS integration
-- **Demo app** answering visual questions in <250ms on A17 Pro
-- **Optimization tools** for custom VLM deployment
-- **Benchmarking suite** for on-device performance
-
-## ⚡ Performance
-
-| Model | Device | Resolution | Latency | Memory | Accuracy |
-|-------|--------|------------|---------|---------|----------|
-| FastVLM-Base | iPhone 15 Pro | 336×336 | 187ms | 892MB | 71.2% |
-| FastVLM-Large | iPhone 15 Pro | 512×512 | 243ms | 1.4GB | 74.8% |
-| FastVLM-Tiny | iPhone 14 | 224×224 | 124ms | 412MB | 68.3% |
-| CLIP (baseline) | iPhone 15 Pro | 224×224 | 892ms | 2.1GB | 69.1% |
-
-*VQAv2 accuracy with INT4 quantization*
-
-## 📋 Requirements
-
-### Development
-```bash
-# Python environment
-python>=3.10
-torch>=2.3.0
-torchvision>=0.18.0
-coremltools>=7.1
-transformers>=4.40.0
-pillow>=10.0.0
-numpy>=1.24.0
-
-# iOS development
-- Xcode 15.0+
-- iOS 17.0+ / macOS 14.0+
-- Swift 5.9+
+```
+fast_vlm_ondevice/
+├── models.py         # Core model components
+├── quantization.py   # INT8 quantization simulation
+└── benchmark.py      # Latency / memory / ops profiling
 ```
 
-### Hardware
-- Apple Silicon Mac for development
-- iPhone 12+ or iPad with A14+ chip for deployment
+### `ImageEncoder`
 
-## 🛠️ Installation
+3-layer ConvNet visual feature extractor.
 
-### Python Setup
+- Conv2d (3→32) → BN → ReLU → MaxPool
+- Conv2d (32→64) → BN → ReLU → MaxPool
+- Conv2d (64→128) → BN → ReLU → AdaptiveAvgPool(4×4)
+- Linear projection → fixed embedding
 
-```bash
-# Clone repository
-git clone https://github.com/yourusername/fast-vlm-ondevice-kit.git
-cd fast-vlm-ondevice-kit
+Outputs a fixed-size embedding regardless of input resolution. Also exposes `encode_as_tokens()` for spatial token output (16 tokens × D), used by cross-modal attention.
 
-# Install Python dependencies
-pip install -r requirements.txt
+### `TextEncoder`
 
-# Download FastVLM checkpoints
-python scripts/download_checkpoints.py --model fast-vlm-base
+Small 2-layer transformer encoder for text queries.
+
+- Token embedding + learned positional encoding
+- 2× TransformerEncoderLayer (d_model=64, nhead=4, dim_feedforward=128)
+- Mean pooling with optional padding mask
+
+### `CrossModalAttention`
+
+Cross-attention between visual and text modalities.
+
+Visual tokens attend to text query tokens — image regions focus on relevant text concepts. Residual connection + LayerNorm for stability.
+
+### `TinyVLM`
+
+Full image-text matching model combining all components.
+
+```
+image → ImageEncoder → visual_tokens (B, 16, D_visual)
+text  → TextEncoder  → text_tokens   (B, L, D_text)
+CrossModalAttention(visual_tokens, text_tokens)
+→ mean pool → concat → MLP → matching_score (B,)
 ```
 
-### iOS Setup
+Returns a scalar similarity score per (image, text) pair.
 
-```bash
-# Install Swift package
-cd ios
-swift package resolve
+### `QuantizationSimulator`
 
-# Open demo project
-open FastVLMDemo.xcodeproj
-```
+Simulates INT8 symmetric per-tensor quantization.
 
-## 🚦 Quick Start
+- Clips and rounds weights to 8-bit precision
+- Measures per-layer weight error
+- Reports SNR (signal-to-noise ratio) of weight approximation
+- `compare_outputs()` measures output accuracy degradation
 
-### 1. Convert Model to Core ML
+Useful for estimating quantization sensitivity before real hardware deployment (CoreML, ONNX Runtime INT8, TFLite, etc.).
+
+### `EdgeBenchmark`
+
+Profiles model inference on CPU.
+
+- Latency: mean, p50, p95, p99 (ms)
+- Memory: process RSS delta (MB)
+- Parameter count and size (MB, FP32)
+- Per-layer parameter breakdown
+
+---
+
+## Quick start
 
 ```python
-from fast_vlm_ondevice import FastVLMConverter
+import torch
+from fast_vlm_ondevice import TinyVLM, QuantizationSimulator, EdgeBenchmark
 
-# Load PyTorch checkpoint
-converter = FastVLMConverter()
-model = converter.load_pytorch_model("checkpoints/fast-vlm-base.pth")
+# Build model
+model = TinyVLM(visual_dim=128, text_dim=64, vocab_size=256, max_seq_len=32)
 
-# Convert with INT4 quantization
-coreml_model = converter.convert_to_coreml(
-    model,
-    quantization="int4",
-    compute_units="ALL",  # CPU + GPU + ANE
-    image_size=(336, 336),
-    max_seq_length=77
-)
+# Run inference
+images = torch.randn(4, 3, 64, 64)
+tokens = torch.randint(0, 256, (4, 16))
+scores = model(images, tokens)  # (4,) matching scores
 
-# Save optimized model
-coreml_model.save("FastVLM.mlpackage")
-print(f"Model size: {converter.get_model_size_mb():.1f}MB")
+# Simulate INT8 quantization
+sim = QuantizationSimulator(bits=8)
+q_model, report = sim.quantize(model)
+print(report)
+
+# Compare outputs
+diff = sim.compare_outputs(model, q_model, (images, tokens))
+print(f"Cosine similarity: {diff['cosine_similarity']:.6f}")
+
+# Benchmark
+bench = EdgeBenchmark(warmup_runs=5, benchmark_runs=30)
+result = bench.run(model, (images[:1], tokens[:1]), name="TinyVLM-FP32")
+print(result)
 ```
 
-### 2. Swift Integration
-
-```swift
-import FastVLMKit
-import Vision
-
-// Initialize on-device VLM
-let vlm = try FastVLM(modelPath: "FastVLM.mlpackage")
-
-// Process image and question
-let image = UIImage(named: "example.jpg")!
-let question = "What objects are in this image?"
-
-// Run inference
-let startTime = CFAbsoluteTimeGetCurrent()
-let answer = try await vlm.answer(image: image, question: question)
-let latency = (CFAbsoluteTimeGetCurrent() - startTime) * 1000
-
-print("Answer: \(answer)")
-print("Latency: \(Int(latency))ms")
-```
-
-### 3. Demo App Usage
-
-```swift
-// SwiftUI View
-struct VLMDemoView: View {
-    @StateObject private var vlm = FastVLMManager()
-    @State private var selectedImage: UIImage?
-    @State private var question = ""
-    @State private var answer = ""
-    
-    var body: some View {
-        VStack {
-            if let image = selectedImage {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFit()
-            }
-            
-            TextField("Ask a question...", text: $question)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-            
-            Button("Get Answer") {
-                Task {
-                    answer = await vlm.processQuery(
-                        image: selectedImage!,
-                        question: question
-                    )
-                }
-            }
-            
-            Text(answer)
-                .padding()
-        }
-    }
-}
-```
-
-## 🏗️ Architecture
-
-```
-┌─────────────────┐     ┌──────────────┐     ┌─────────────────┐
-│  PyTorch Model  │────▶│  Converter   │────▶│ Core ML Model   │
-│   (FastVLM)     │     │ (Quantizer)  │     │  (.mlpackage)   │
-└─────────────────┘     └──────────────┘     └─────────────────┘
-                                                      │
-                                                      ▼
-┌─────────────────┐     ┌──────────────┐     ┌─────────────────┐
-│   Swift API     │────▶│ Neural Engine│────▶│  Inference      │
-│                 │     │     (ANE)    │     │   (<250ms)      │
-└─────────────────┘     └──────────────┘     └─────────────────┘
-```
-
-### Key Components
-
-1. **Vision Encoder**: Optimized MobileViT variant for Apple Neural Engine
-2. **Text Encoder**: Compressed CLIP text encoder with vocabulary pruning
-3. **Fusion Module**: Efficient cross-attention with INT4 weights
-4. **Decoder**: Lightweight autoregressive head for answer generation
-
-## 🔧 Advanced Features
-
-### Custom Quantization
-
-```python
-from fast_vlm_ondevice.quantization import QuantizationConfig
-
-# Configure per-layer quantization
-config = QuantizationConfig(
-    vision_encoder="int4",      # Aggressive for vision
-    text_encoder="int8",        # Moderate for text
-    fusion_layers="fp16",       # Higher precision for fusion
-    decoder="int4",             # Aggressive for decoder
-    calibration_samples=1000
-)
-
-# Apply custom quantization
-quantized_model = converter.quantize_model(model, config)
-
-# Measure accuracy drop
-accuracy_drop = converter.evaluate_quantization(
-    original_model=model,
-    quantized_model=quantized_model,
-    test_dataset="vqa_val"
-)
-print(f"Accuracy drop: {accuracy_drop:.2%}")
-```
-
-### Performance Profiling
-
-```swift
-// Profile on-device inference
-let profiler = FastVLMProfiler()
-
-let metrics = try await profiler.profile(
-    model: vlm,
-    iterations: 100,
-    warmup: 10
-) 
-
-print("""
-    Average latency: \(metrics.avgLatencyMs)ms
-    P95 latency: \(metrics.p95LatencyMs)ms
-    Peak memory: \(metrics.peakMemoryMB)MB
-    Energy impact: \(metrics.energyImpact)
-    """)
-```
-
-### Batch Processing
-
-```python
-# Optimize for batch inference
-from fast_vlm_ondevice import BatchOptimizer
-
-optimizer = BatchOptimizer()
-batch_model = optimizer.create_batch_model(
-    base_model=model,
-    batch_sizes=[1, 4, 8],
-    dynamic_batching=True
-)
-
-# Convert with batch support
-batch_coreml = converter.convert_to_coreml(
-    batch_model,
-    flexible_shape_ranges={
-        "images": [(1, 3, 336, 336), (8, 3, 336, 336)],
-        "questions": [(1, 77), (8, 77)]
-    }
-)
-```
-
-## 📊 Benchmarking
-
-### Run Benchmarks
+## Demo
 
 ```bash
-# Benchmark different models
-python benchmarks/run_benchmarks.py \
-    --models fast-vlm-tiny,fast-vlm-base,fast-vlm-large \
-    --devices "iPhone 15 Pro,iPad Pro M2" \
-    --metrics latency,memory,accuracy,energy
-
-# Generate report
-python benchmarks/generate_report.py --output results.html
+python demo.py
 ```
 
-### Energy Profiling
+Example output (315K params, CPU):
+```
+Model: TinyVLM | 315,553 parameters
 
-```swift
-// Measure battery impact
-let energyProfiler = EnergyProfiler()
+QuantizationReport (FP32 → INT8)
+  Parameters quantized: 315,105 / 315,105
+  Mean weight error:    0.000784
+  Weight SNR:           47.02 dB
 
-energyProfiler.startMeasuring()
-for _ in 0..<100 {
-    _ = try await vlm.answer(image: testImage, question: testQuestion)
-}
-let energyMetrics = energyProfiler.stopMeasuring()
+BenchmarkResult: TinyVLM-FP32
+  Parameters:      315,553 (1.20 MB FP32)
+  Latency (CPU):   1.04 ms mean  [p50=0.86  p95=1.53  p99=1.60]
 
-print("mWh consumed: \(energyMetrics.milliwattHours)")
-print("Inference/charge: \(energyMetrics.inferencesPerCharge)")
+Output cosine similarity (FP32 vs INT8sim): 0.999997
 ```
 
-## 🎯 Use Cases
+---
 
-### Visual Accessibility
-
-```swift
-// Real-time scene description for visually impaired
-class AccessibilityVLM {
-    let vlm: FastVLM
-    
-    func describeContinuously(from camera: AVCaptureSession) {
-        camera.onFrame { frame in
-            let description = await self.vlm.answer(
-                image: frame,
-                question: "Describe what's in front of me"
-            )
-            
-            // Speak description
-            AVSpeechSynthesizer.speak(description)
-        }
-    }
-}
-```
-
-### Shopping Assistant
-
-```swift
-// Product identification and comparison
-func identifyProduct(image: UIImage) async -> ProductInfo {
-    let questions = [
-        "What product is this?",
-        "What brand is visible?",
-        "What are the key features shown?"
-    ]
-    
-    let answers = await vlm.batchAnswer(
-        image: image,
-        questions: questions
-    )
-    
-    return ProductInfo(
-        name: answers[0],
-        brand: answers[1],
-        features: answers[2]
-    )
-}
-```
-
-## 📱 Sample Apps
-
-### Camera VLM
-
-Real-time visual Q&A using device camera:
+## Install
 
 ```bash
-cd examples/CameraVLM
-open CameraVLM.xcodeproj
-# Build and run on device
+pip install -e .
 ```
 
-### Photo Library Assistant
+Requirements: Python ≥3.10, PyTorch ≥2.0, psutil.
 
-Intelligent photo search and organization:
+---
+
+## Tests
 
 ```bash
-cd examples/PhotoAssistant
-swift run
+pytest tests/ -v
 ```
 
-## 🔬 Model Variants
+43 tests covering all components: shape/dtype correctness, gradient flow, quantization math, benchmark output structure.
 
-| Variant | Parameters | Size | Use Case |
-|---------|------------|------|----------|
-| FastVLM-Tiny | 42M | 98MB | Real-time camera apps |
-| FastVLM-Base | 156M | 412MB | Balanced performance |
-| FastVLM-Large | 298M | 892MB | Maximum accuracy |
-| FastVLM-Multilingual | 201M | 523MB | 15 languages |
+---
 
-## 🐳 Docker Development
+## Design goals
 
-```dockerfile
-# Dockerfile for model conversion
-FROM python:3.10
+- **Minimal dependencies**: PyTorch + psutil only
+- **No pretrained weights**: architecture demo, easily replaced with real weights
+- **CPU-first**: everything measurable without GPU
+- **Composable**: use components independently or as a full pipeline
+- **Quantization-aware**: built for INT8/INT4 transition to CoreML/ONNX/TFLite
 
-RUN pip install torch torchvision coremltools
-COPY requirements.txt .
-RUN pip install -r requirements.txt
+---
 
-WORKDIR /workspace
-CMD ["python", "convert_model.py"]
-```
+## On-device deployment path
 
-## 🤝 Contributing
+This toolkit is a research/prototyping harness. For production deployment:
 
-We welcome contributions! Priority areas:
-- Additional model architectures
-- Android/ONNX Runtime support
-- Performance optimizations
-- New use case examples
-- Multilingual support
+1. Train TinyVLM (or substitute a real VLM backbone)
+2. Assess quantization sensitivity with `QuantizationSimulator`
+3. Export to target runtime:
+   - **Apple Neural Engine**: CoreML via `coremltools`
+   - **Android**: TFLite or ONNX Runtime Mobile
+   - **General edge**: ONNX export + ORT
+4. Benchmark on device with `EdgeBenchmark` pattern
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+---
 
-## 📄 Citation
+## License
 
-```bibtex
-@inproceedings{fast_vlm_ondevice_2025,
-  title={FastVLM: Efficient Vision-Language Models for Mobile Devices},
-  author={Apple AI/ML Team},
-  booktitle={CVPR},
-  year={2025}
-}
-
-@software{fast_vlm_ondevice_kit,
-  title={Fast VLM On-Device Kit: Production-Ready Mobile Vision-Language Models},
-  author={Daniel Schmidt},
-  year={2025},
-  url={https://github.com/danieleschmidt/fast-vlm-ondevice-kit}
-}
-```
-
-## 🏆 Acknowledgments
-
-- Apple AI/ML team for the FastVLM paper
-- Core ML team for optimization tools
-- The iOS developer community
-
-## 📝 License
-
-MIT License - See [LICENSE](LICENSE) for details.
-
-## 🔗 Resources
-
-- [Documentation](https://fast-vlm-ondevice.readthedocs.io)
-- [Model Zoo](https://huggingface.co/fast-vlm-ondevice)
-- [Video Tutorial](https://youtube.com/fast-vlm-mobile)
-- [Swift Package](https://github.com/fast-vlm-ondevice/swift-package)
-- [Discord Community](https://discord.gg/fast-vlm)
-
-## 📧 Contact
-
-- **GitHub Issues**: Bug reports and features
-- **Email**: fast-vlm@yourdomain.com
-- **Twitter**: [@FastVLMOnDevice](https://twitter.com/fastvlmondevice)
+MIT
